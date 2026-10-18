@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Assistant liturgique — Au service de la Parole de Dieu et de la prière universelle</title>
+  <meta name="description" content="Préparez les introductions aux lectures et les intentions de prière universelle d'une célébration, avec téléchargement du document Word.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="referrer" content="no-referrer">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#contenu">Aller au contenu</a>
+
+  <!-- Icônes des réseaux (à remplacer ici si vous préférez les fichiers officiels de leurs chartes graphiques) -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <symbol id="ic-whatsapp" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+    </symbol>
+    <symbol id="ic-instagram" viewBox="0 0 24 24">
+      <rect x="2.2" y="2.2" width="19.6" height="19.6" rx="5.6" fill="none" stroke="currentColor" stroke-width="2"/>
+      <circle cx="12" cy="12" r="4.6" fill="none" stroke="currentColor" stroke-width="2"/>
+      <circle cx="17.5" cy="6.5" r="1.3" fill="currentColor"/>
+    </symbol>
+  </svg>
+
+  <!-- Halos décoratifs -->
+  <div class="bg" aria-hidden="true">
+    <span class="bg__halo bg__halo--violet"></span>
+    <span class="bg__halo bg__halo--gold"></span>
+    <span class="bg__halo bg__halo--wine"></span>
+  </div>
+
+  <!-- Navigation -->
+  <header class="site-header" id="accueil-top">
+    <div class="container site-header__inner">
+      <a class="brand" href="#accueil">
+        <!-- Emplacement du logo : emblème générique provisoire, remplacé par PARISH_LOGO_URL dans app.js -->
+        <span class="brand__mark" data-logo-slot>
+          <svg width="40" height="40" viewBox="0 0 48 48" aria-hidden="true">
+            <circle cx="24" cy="24" r="22" fill="none" stroke="var(--gold)" stroke-width="2"/>
+            <path d="M24 9v30M15 19h18" stroke="var(--wine)" stroke-width="3.5" stroke-linecap="round"/>
+            <circle cx="24" cy="24" r="4" fill="var(--gold)"/>
+          </svg>
+        </span>
+        <span class="brand__text">
+          <span class="brand__name">Assistant liturgique</span>
+          <span class="brand__parish">Paroisse Sainte Joséphine Bakhita</span>
+        </span>
+      </a>
+
+      <nav class="nav" id="mainNav" aria-label="Navigation principale">
+        <a class="nav__link" href="#accueil">Accueil</a>
+        <a class="nav__link" href="#preparer">Préparer une célébration</a>
+        <a class="nav__link" href="#fonctionnalites">Fonctionnalités</a>
+        <a class="nav__link" href="#a-propos">À propos</a>
+      </nav>
+
+      <div class="site-header__actions">
+        <button type="button" class="icon-btn" id="themeToggle" aria-label="Passer au thème sombre" aria-pressed="false">
+          <svg class="icon icon--moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+          <svg class="icon icon--sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        </button>
+        <button type="button" class="icon-btn nav-toggle" id="navToggle" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="mainNav">
+          <svg class="icon icon--menu" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+          <svg class="icon icon--close" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+        <nav class="app-dashboard-nav" id="appDashboardNav" aria-label="Navigation de l'application">
+        <a class="dashboard-nav-link is-current" href="#accueil" data-dashboard-link="accueil">
+          <span class="dashboard-nav-icon" aria-hidden="true">⌂</span>
+          <span>Accueil</span>
+        </a>
+        <a class="dashboard-nav-link" href="#preparer" data-dashboard-link="preparer">
+          <span class="dashboard-nav-icon" aria-hidden="true">＋</span>
+          <span>Nouvelle préparation</span>
+        </a>
+        <a class="dashboard-nav-link" href="#fonctionnalites" data-dashboard-link="fonctionnalites">
+          <span class="dashboard-nav-icon" aria-hidden="true">✧</span>
+          <span>Fonctionnalités</span>
+        </a>
+        <a class="dashboard-nav-link" href="#a-propos" data-dashboard-link="a-propos">
+          <span class="dashboard-nav-icon" aria-hidden="true">ⓘ</span>
+          <span>À propos</span>
+        </a>
+      </nav>
+<main id="contenu">
+
+    <!-- Accueil -->
+    <section class="hero container" id="accueil" aria-labelledby="heroTitle">
+      <div class="hero__text reveal">
+        <p class="pill">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg>
+          Introductions aux lectures · Prière universelle
+        </p>
+        <h1 class="hero__title" id="heroTitle">Assistant <span>liturgique</span></h1>
+        <p class="hero__subtitle">Au service de la Parole de Dieu et de la prière universelle</p>
+        <p class="hero__signature">
+          <svg width="18" height="22" viewBox="0 0 18 22" aria-hidden="true"><path d="M9 2v18M3 8h12" stroke="var(--gold)" stroke-width="2.4" stroke-linecap="round"/></svg>
+          <span>Un projet numérique au service de la Parole de Dieu et de la communauté paroissiale.</span>
+        </p>
+        <div class="hero__actions">
+          <a class="btn btn--primary btn--lg" href="#preparer">
+            Préparer une célébration
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </a>
+          <a class="btn btn--ghost btn--lg" href="#fonctionnalites">Découvrir les fonctionnalités</a>
+        </div>
+      </div>
+
+      <div class="hero__emblem reveal" aria-hidden="true">
+        <div class="emblem">
+          <span class="emblem__glow"></span>
+          <span class="emblem__ring"></span>
+          <div class="emblem__disc">
+            <svg width="176" height="176" viewBox="0 0 120 120">
+              <g stroke="var(--gold)" stroke-width="2.4" stroke-linecap="round"><path d="M60 8v10M60 102v10M8 60h10M102 60h10M23 23l7 7M90 90l7 7M97 23l-7 7M30 90l-7 7"/></g>
+              <circle cx="60" cy="60" r="36" fill="none" stroke="var(--violet)" stroke-width="2"/>
+              <path d="M60 32v56M40 50h40" stroke="var(--wine)" stroke-width="7" stroke-linecap="round"/>
+              <circle cx="60" cy="60" r="7" fill="var(--gold)"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Fonctionnalités -->
+    <section class="section container" id="fonctionnalites" aria-labelledby="featTitle">
+      <div class="section__head reveal">
+        <p class="eyebrow">Fonctionnalités</p>
+        <h2 class="section__title" id="featTitle">Un travail liturgique prêt en quelques instants</h2>
+      </div>
+      <div class="grid grid--3">
+        <article class="card card--feature reveal">
+          <div class="feature-icon feature-icon--wine" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h13v17H6a2 2 0 0 0-2 2z"/><path d="M8 7h7M8 11h5"/></svg>
+          </div>
+          <h3>Deux introductions aux lectures</h3>
+          <p>Des introductions sobres pour la première et la deuxième lecture, rédigées à partir de vos références bibliques.</p>
+        </article>
+        <article class="card card--feature reveal">
+          <div class="feature-icon feature-icon--night" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7 11V6a5 5 0 0 1 10 0v5"/><path d="M5 11h14l-1 9H6z"/></svg>
+          </div>
+          <h3>Quatre intentions de prière universelle</h3>
+          <p>Toujours quatre intentions, présentées dans des cartes que l'on copie une à une ou toutes ensemble.</p>
+        </article>
+        <article class="card card--feature reveal">
+          <div class="feature-icon feature-icon--gold" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 11v6M9.5 14.5 12 17l2.5-2.5"/></svg>
+          </div>
+          <h3>Document Word à télécharger</h3>
+          <p>Le fichier .docx est produit par le serveur, selon les règles de mise en forme de votre application.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- Application -->
+    <section class="section container app" id="preparer" aria-labelledby="appTitle">
+      <div class="section__head reveal">
+        <p class="eyebrow">Préparer une célébration</p>
+        <h2 class="section__title" id="appTitle">Renseignez la célébration</h2>
+      </div>
+
+      <!-- Vue : formulaire -->
+        <!-- Navigation rapide de l'espace de travail -->
+        <nav class="workspace-shortcuts" id="workspaceShortcuts"
+             aria-label="Navigation rapide">
+          <a class="workspace-shortcut workspace-shortcut--active"
+             href="#formView">
+            <span class="workspace-shortcut__number">01</span>
+            <span class="workspace-shortcut__text">
+              <strong>Préparation</strong>
+              <small>Configurer la célébration</small>
+            </span>
+          </a>
+
+          <a class="workspace-shortcut" href="#fonctionnalites">
+            <span class="workspace-shortcut__number">02</span>
+            <span class="workspace-shortcut__text">
+              <strong>Fonctionnalités</strong>
+              <small>Découvrir les possibilités</small>
+            </span>
+          </a>
+
+          <a class="workspace-shortcut" href="#a-propos">
+            <span class="workspace-shortcut__number">03</span>
+            <span class="workspace-shortcut__text">
+              <strong>Le projet</strong>
+              <small>Comprendre la démarche</small>
+            </span>
+          </a>
+        </nav>
+            <div class="dashboard-welcome" id="dashboardWelcome">
+        <div class="dashboard-welcome__main">
+          <span class="dashboard-kicker">ESPACE DE TRAVAIL</span>
+          <h2>Préparons la liturgie ensemble.</h2>
+          <p>Configurez la célébration, renseignez les lectures et préparez des introductions et intentions de prière à relire avant la célébration.</p>
+          <a class="btn btn--primary dashboard-start" href="#formView">
+            Commencer une préparation
+            <span aria-hidden="true">→</span>
+          </a>
+        </div>
+        <div class="dashboard-welcome__aside" aria-label="Contenu généré">
+          <div class="dashboard-stat">
+            <span class="dashboard-stat__number">02</span>
+            <span class="dashboard-stat__label">Introductions aux lectures</span>
+          </div>
+          <div class="dashboard-stat">
+            <span class="dashboard-stat__number">04</span>
+            <span class="dashboard-stat__label">Intentions de prière universelle</span>
+          </div>
+          <p class="dashboard-welcome__note">Un document Word prêt à être relu et adapté.</p>
+        </div>
+      </div>
+<div id="formView" class="card card--form reveal">
+        <form id="liturgyForm" novalidate autocomplete="off">
+
+          <div class="progress" aria-label="Progression">
+            <div class="progress__meta">
+              <span class="progress__step" id="progressLabel">Étape 1 sur 4</span>
+              <span class="progress__name" id="progressName">Célébration</span>
+            </div>
+            <div class="progress__track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="25" aria-label="Progression du formulaire" id="progressBar">
+              <span class="progress__fill" id="progressFill"></span>
+            </div>
+            <ol class="progress__steps" aria-hidden="true">
+              <li data-dot="1" class="is-current"><span>1</span> Célébration</li>
+              <li data-dot="2"><span>2</span> Lectures</li>
+              <li data-dot="3"><span>3</span> Consignes</li>
+              <li data-dot="4"><span>4</span> Gemini</li>
+            </ol>
+          </div>
+
+          <!-- Étape 1 -->
+          <section class="step is-active" data-step="1" aria-labelledby="step1Title">
+            <header class="step__head">
+              <span class="step__icon step__icon--wine" aria-hidden="true">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>
+              </span>
+              <div>
+                <h3 id="step1Title">La célébration</h3>
+                <p>Quel jour de la liturgie préparez-vous ?</p>
+              </div>
+            </header>
+            <div class="fields fields--2">
+              <div class="field">
+                <label for="date">Date de la célébration</label>
+                <input id="date" name="date" type="date" required aria-describedby="err-date">
+                <p class="field__error" id="err-date" hidden></p>
+              </div>
+              <div class="field">
+                <label for="celebration">Nom de la célébration ou du dimanche</label>
+                <input id="celebration" name="celebration" type="text" required maxlength="160" placeholder="Ex. 30e dimanche du temps ordinaire" aria-describedby="err-celebration">
+                <p class="field__error" id="err-celebration" hidden></p>
+              </div>
+              <div class="field">
+                <label for="tempsLiturgique">Temps liturgique</label>
+                <select id="tempsLiturgique" name="tempsLiturgique" required aria-describedby="err-tempsLiturgique">
+                  <option value="">Choisir…</option>
+                  <option>Avent</option>
+                  <option>Temps de Noël</option>
+                  <option>Temps ordinaire</option>
+                  <option>Carême</option>
+                  <option>Triduum pascal</option>
+                  <option>Temps pascal</option>
+                </select>
+                <p class="field__error" id="err-tempsLiturgique" hidden></p>
+              </div>
+              <fieldset class="field field--choice">
+                <legend>Année liturgique</legend>
+                <div class="choice-row" role="radiogroup" aria-describedby="err-anneeLiturgique">
+                  <label class="choice"><input type="radio" name="anneeLiturgique" value="A" required><span>A</span></label>
+                  <label class="choice"><input type="radio" name="anneeLiturgique" value="B" required><span>B</span></label>
+                  <label class="choice"><input type="radio" name="anneeLiturgique" value="C" required><span>C</span></label>
+                </div>
+                <p class="field__error" id="err-anneeLiturgique" hidden></p>
+              </fieldset>
+            </div>
+          </section>
+
+          <!-- Étape 2 -->
+          <section class="step" data-step="2" aria-labelledby="step2Title" hidden>
+            <header class="step__head">
+              <span class="step__icon step__icon--violet" aria-hidden="true">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h13v17H6a2 2 0 0 0-2 2z"/><path d="M8 7h7M8 11h5"/></svg>
+              </span>
+              <div>
+                <h3 id="step2Title">Les références bibliques</h3>
+                <p>Indiquez les lectures de la célébration.</p>
+              </div>
+            </header>
+            <div class="fields fields--3">
+              <div class="field">
+                <label for="premiereLecture">Première lecture</label>
+                <input id="premiereLecture" name="premiereLecture" type="text" required maxlength="120" placeholder="Ex. Jr 31, 7-9" aria-describedby="err-premiereLecture">
+                <p class="field__error" id="err-premiereLecture" hidden></p>
+              </div>
+              <div class="field">
+                <label for="deuxiemeLecture">Deuxième lecture</label>
+                <input id="deuxiemeLecture" name="deuxiemeLecture" type="text" required maxlength="120" placeholder="Ex. He 5, 1-6" aria-describedby="err-deuxiemeLecture">
+                <p class="field__error" id="err-deuxiemeLecture" hidden></p>
+              </div>
+              <div class="field">
+                <label for="evangile">Évangile</label>
+                <input id="evangile" name="evangile" type="text" required maxlength="120" placeholder="Ex. Mc 10, 46b-52" aria-describedby="err-evangile">
+                <p class="field__error" id="err-evangile" hidden></p>
+              </div>
+            </div>
+            <div class="field field--wide">
+              <label for="textesBibliques">Textes bibliques ou extraits <span class="optional">facultatif</span></label>
+              <textarea id="textesBibliques" name="textesBibliques" rows="6" maxlength="20000" placeholder="Collez ici les textes complets ou des extraits, si vous le souhaitez."></textarea>
+            </div>
+          </section>
+
+          <!-- Étape 3 -->
+          <section class="step" data-step="3" aria-labelledby="step3Title" hidden>
+            <header class="step__head">
+              <span class="step__icon step__icon--gold" aria-hidden="true">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
+              </span>
+              <div>
+                <h3 id="step3Title">Personnalisation</h3>
+                <p>Des consignes locales peuvent aider à adapter les formulations.</p>
+              </div>
+            </header>
+            <div class="hint" role="note">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"/></svg>
+              <p>Précisez par exemple une particularité de la paroisse, un événement local ou le ton souhaité. Ce champ reste facultatif.</p>
+            </div>
+            <div class="field field--wide">
+              <label for="consignes">Consignes locales ou particularités <span class="optional">facultatif</span></label>
+              <textarea id="consignes" name="consignes" rows="6" maxlength="4000" placeholder="Ex. Prévoir une intention pour les jeunes de la paroisse."></textarea>
+            </div>
+          </section>
+
+          <!-- Étape 4 -->
+          <section class="step" data-step="4" aria-labelledby="step4Title" hidden>
+            <header class="step__head">
+              <span class="step__icon step__icon--night" aria-hidden="true">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="m10.8 12.2 9-9M16 7l3 3M14 9l2 2"/></svg>
+              </span>
+              <div>
+                <h3 id="step4Title">Configuration de Gemini</h3>
+                <p>Utilisez votre propre clé API pour lancer la génération.</p>
+              </div>
+            </header>
+
+            <div class="field field--wide">
+              <label for="geminiKey">Clé API Gemini</label>
+              <div class="key-row">
+                <input id="geminiKey" type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore placeholder="Collez votre clé ici" aria-describedby="keyStatus err-geminiKey">
+                <button type="button" class="btn btn--outline" id="keyToggle" aria-pressed="false">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <span id="keyToggleLabel">Afficher</span>
+                </button>
+                <button type="button" class="btn btn--outline btn--danger" id="keyClear">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>
+                  Effacer
+                </button>
+              </div>
+              <p class="field__help" id="keyStatus">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+                <span>Clé non vérifiée : sa validité n'est confirmée que par Google lors de la génération.</span>
+              </p>
+              <p class="field__error" id="err-geminiKey" hidden></p>
+            </div>
+
+            <p class="link-row">
+              <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">
+                Obtenir une clé dans Google AI Studio
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>
+                <span class="sr-only">(s'ouvre dans un nouvel onglet)</span>
+              </a>
+            </p>
+
+            <div class="notes">
+              <div class="note note--violet">
+                <h4>Votre responsabilité</h4>
+                <p>Chaque utilisateur est responsable de sa clé, de ses quotas et des éventuels frais liés à son usage de Gemini.</p>
+              </div>
+              <div class="note note--gold">
+                <h4>Ce que devient la clé</h4>
+                <p>Elle est transmise en HTTPS à votre serveur, uniquement pour cette génération. Elle n'est enregistrée ni dans ce navigateur ni par l'application.</p>
+              </div>
+            </div>
+
+            <div class="alert alert--error" id="formError" role="alert" hidden>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5v.01"/></svg>
+              <div>
+                <strong id="formErrorTitle">La génération a échoué</strong>
+                <p id="formErrorText"></p>
+              </div>
+            </div>
+          </section>
+
+          <div class="form-nav">
+            <button type="button" class="btn btn--outline" id="prevBtn" disabled>Précédent</button>
+            <button type="button" class="btn btn--primary" id="nextBtn">
+              Continuer
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </button>
+            <button type="submit" class="btn btn--primary" id="generateBtn" hidden>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg>
+              Générer le travail liturgique
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Vue : chargement -->
+      <div id="loadingView" class="card card--loading" hidden>
+        <p class="parish-tag">
+          <svg width="14" height="18" viewBox="0 0 18 22" aria-hidden="true"><path d="M9 2v18M3 8h12" stroke="var(--gold)" stroke-width="2.6" stroke-linecap="round"/></svg>
+          Paroisse Sainte Joséphine Bakhita · Abomey-Calavi
+        </p>
+        <div class="loader" aria-hidden="true">
+          <span class="loader__ring"></span>
+          <svg width="44" height="44" viewBox="0 0 120 120"><path d="M60 28v64M38 50h44" stroke="var(--wine)" stroke-width="9" stroke-linecap="round"/><circle cx="60" cy="60" r="8" fill="var(--gold)"/></svg>
+        </div>
+        <h3 id="loadingMessage" role="status">Méditation des textes bibliques…</h3>
+        <p>La génération peut prendre un moment. Merci de ne pas fermer la page.</p>
+        <div class="progress__track progress__track--indeterminate" aria-hidden="true"><span class="progress__fill"></span></div>
+        <button type="button" class="btn btn--outline" id="cancelBtn">Annuler</button>
+      </div>
+
+      <!-- Vue : résultats -->
+      <div id="resultsView" hidden>
+        <div class="alert alert--success" role="status" id="docReady">
+          <span class="check" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path class="check__path" d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+          </span>
+          <div>
+            <strong>Le travail liturgique est prêt</strong>
+            <p id="docReadyText">Les textes sont affichés ci-dessous.</p>
+          </div>
+        </div>
+
+        <div class="results-head">
+          <div>
+            <p class="eyebrow" id="resDate"></p>
+            <h3 class="results-title" id="resTitle"></h3>
+          </div>
+          <div class="results-actions">
+            <button type="button" class="btn btn--primary" id="downloadBtn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 20h14"/></svg>
+              Télécharger le document Word
+            </button>
+            <button type="button" class="btn btn--outline" id="copyAllBtn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg>
+              <span>Tout copier</span>
+            </button>
+            <button type="button" class="btn btn--ghost" id="restartBtn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5"/></svg>
+              Nouvelle génération
+            </button>
+          </div>
+        </div>
+
+        <h3 class="group-title">Introductions aux lectures</h3>
+        <div class="grid grid--2" id="introGrid"></div>
+
+        <h3 class="group-title">Prière universelle</h3>
+        <div class="grid grid--2" id="intentionGrid"></div>
+
+        <section class="quality" id="qualityBox" aria-labelledby="qualityTitle" hidden>
+          <h3 id="qualityTitle">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4 6v6c0 4.5 3.2 8 8 9 4.8-1 8-4.5 8-9V6z"/><path d="m9 12 2 2 4-4"/></svg>
+            Rapport de qualité du serveur
+          </h3>
+          <ul id="qualityList"></ul>
+        </section>
+
+        <p class="disclaimer">Les textes générés doivent être relus avant usage liturgique.</p>
+        <p class="parish-tag parish-tag--end">
+          <svg width="14" height="18" viewBox="0 0 18 22" aria-hidden="true"><path d="M9 2v18M3 8h12" stroke="var(--gold)" stroke-width="2.6" stroke-linecap="round"/></svg>
+          Paroisse Sainte Joséphine Bakhita · Abomey-Calavi
+        </p>
+      </div>
+    </section>
+
+    <!-- Pour notre communauté paroissiale -->
+    <section class="section container" id="communaute" aria-labelledby="communityTitle">
+      <div class="community reveal">
+        <div class="community__text">
+          <p class="eyebrow">Pour notre communauté paroissiale</p>
+          <h2 id="communityTitle">Une aide à la préparation de la liturgie</h2>
+          <p>L'Assistant liturgique a une vocation simple : faciliter la préparation des introductions aux lectures bibliques et des intentions de prière universelle, afin de laisser plus de temps à la prière et à la méditation de la Parole.</p>
+          <p class="community__note">Cette application est le projet de son créateur. Elle n'est pas présentée comme une application officielle de la paroisse ou de l'archidiocèse.</p>
+        </div>
+        <aside class="community__card" aria-label="La paroisse">
+          <span class="community__logo" data-logo-slot>
+            <svg width="72" height="72" viewBox="0 0 48 48" aria-hidden="true">
+              <circle cx="24" cy="24" r="22" fill="none" stroke="var(--gold)" stroke-width="2"/>
+              <path d="M24 9v30M15 19h18" stroke="var(--wine)" stroke-width="3.5" stroke-linecap="round"/>
+              <circle cx="24" cy="24" r="4" fill="var(--gold)"/>
+            </svg>
+          </span>
+          <h3>Paroisse Sainte Joséphine Bakhita</h3>
+          <p>Abomey-Calavi, Bénin<br>Archidiocèse de Cotonou</p>
+          <a class="community__link" href="https://paroissebakhita-bj.org/" target="_blank" rel="noopener noreferrer">
+            Site de la paroisse
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>
+            <span class="sr-only">(s'ouvre dans un nouvel onglet)</span>
+          </a>
+        </aside>
+      </div>
+    </section>
+
+    <!-- À propos -->
+    <section class="section container" id="a-propos" aria-labelledby="aboutHeading">
+      <div class="section__head reveal">
+        <p class="eyebrow">À propos</p>
+        <h2 class="section__title" id="aboutHeading">Un projet, et la personne qui l'a conçu</h2>
+      </div>
+
+      <div class="about-grid">
+        <article class="card about-project reveal">
+          <h3>Le projet</h3>
+          <p>L'Assistant liturgique met les outils numériques au service de la préparation liturgique : à partir des références d'une célébration, il aide à rédiger deux introductions aux lectures et quatre intentions de prière universelle, puis propose un document Word à télécharger.</p>
+          <ul class="chips" aria-label="Technologies utilisées">
+            <li>JavaScript</li>
+            <li>Node.js</li>
+            <li>Gemini</li>
+          </ul>
+        </article>
+      </div>
+
+      <div class="about reveal">
+        <div>
+          <h2 id="aboutTitle">Votre clé, votre responsabilité</h2>
+          <p>Chaque utilisateur renseigne sa propre clé Gemini. L'application ne la conserve pas : elle sert uniquement à la génération en cours, et le serveur applique toujours les mêmes règles liturgiques, avec deux introductions et quatre intentions.</p>
+        </div>
+        <a class="btn btn--gold" href="#preparer">Préparer une célébration</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="site-footer__top">
+        <div class="site-footer__parish">
+          <strong>Paroisse Sainte Joséphine Bakhita</strong>
+          <span>Abomey-Calavi, Bénin · Archidiocèse de Cotonou</span>
+          <a href="https://paroissebakhita-bj.org/" target="_blank" rel="noopener noreferrer">paroissebakhita-bj.org<span class="sr-only"> (s'ouvre dans un nouvel onglet)</span></a>
+        </div>
+        <div class="footer-social" aria-label="Contacter le créateur">
+          <a class="footer-social__link" data-contact="whatsapp" aria-label="Me contacter sur WhatsApp">
+            <svg width="20" height="20" aria-hidden="true"><use href="#ic-whatsapp"/></svg>
+          </a>
+          <a class="footer-social__link" data-contact="instagram" aria-label="Suivre le créateur sur Instagram">
+            <svg width="20" height="20" aria-hidden="true"><use href="#ic-instagram"/></svg>
+          </a>
+        </div>
+      </div>
+      <div class="site-footer__inner">
+        <span>© <span id="year"></span> Assistant liturgique</span>
+        <span>Relisez toujours les textes avant usage liturgique.</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Notifications -->
+  <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+
+  <!-- Modèles (contenu statique, jamais de texte généré) -->
+  <template id="resultCardTpl">
+    <article class="result-card">
+      <header class="result-card__head">
+        <span class="result-card__icon" data-icon aria-hidden="true"></span>
+        <h4 class="result-card__title"></h4>
+        <button type="button" class="copy-btn" data-copy>
+          <svg class="copy-btn__idle" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg>
+          <svg class="copy-btn__done" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+          <span class="copy-btn__label">Copier</span>
+        </button>
+      </header>
+      <p class="result-card__text"></p>
+    </article>
+  </template>
+  <template id="iconBook"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h13v17H6a2 2 0 0 0-2 2z"/><path d="M8 7h7M8 11h5"/></svg></template>
+  <template id="iconPrayer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7 11V6a5 5 0 0 1 10 0v5"/><path d="M5 11h14l-1 9H6z"/></svg></template>
+
+  <script src="app.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+AGENT LITURGIQUE GEMINI — ÉTAPE 3
+
+PRÉREQUIS
+- Node.js installé (de préférence version LTS récente).
+- Une clé API Gemini obtenue depuis Google AI Studio.
+- Connexion Internet.
+
+INSTALLATION SOUS WINDOWS
+1. Décompresse le dossier dans un emplacement simple, par exemple C:\Users\HP\agent_liturgie_gemini.
+2. Ouvre ce dossier dans l'Explorateur de fichiers.
+3. Dans la barre d'adresse du dossier, tape cmd puis Entrée.
+4. Dans la fenêtre du terminal, exécute : npm install
+5. Copie le fichier .env.example et renomme la copie en .env.
+   Important : active « Afficher > Extensions de noms de fichiers » dans l'Explorateur pour éviter .env.txt.
+6. Ouvre .env avec le Bloc-notes et remplace COLLE_TA_CLE_ICI par ta clé API. Ne mets pas de guillemets et ne partage pas ce fichier.
+7. Exécute : npm start
+8. Réponds aux questions. Le programme affichera le texte et créera un fichier Word .docx dans le dossier du projet.
+
+SI LE MODÈLE EST REFUSÉ
+Ouvre .env et remplace GEMINI_MODEL par un modèle de génération de texte actuellement disponible dans ton compte Google AI Studio. Ne modifie pas le code pour coller la clé API dedans.
+
+CE QUE FAIT CETTE VERSION
+- Envoie à Gemini un guide de style local.
+- Sélectionne jusqu'à trois exemples du corpus selon des mots-clés.
+- Demande à Gemini de s'inspirer du style sans copier les exemples ni en tirer les lectures officielles.
+- Enregistre la réponse en Word.
+
+CE QU'ELLE NE FAIT PAS ENCORE
+- Elle ne consulte pas automatiquement le calendrier liturgique officiel.
+- Elle ne vérifie pas les références bibliques sur AELF.
+- Elle n'entraîne pas les paramètres du modèle : c'est une approche par prompt + exemples (RAG simplifié).
+- Les exemples du corpus ont été extraits automatiquement et nécessitent encore une validation humaine.
+
+SÉCURITÉ
+- Ne partage jamais .env, ta clé API ou une capture d'écran où elle apparaît.
+- Ne mets pas la clé API dans un fichier public ou dans GitHub.
+- Vérifie les textes officiels et les références avant une utilisation liturgique.

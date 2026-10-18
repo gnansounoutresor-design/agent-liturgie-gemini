@@ -1,0 +1,34 @@
+.env
+node_modules/
+travail_liturgique_*.docx
+# Secrets et configuration locale
+.env.*
+!.env.example
+# Dependances
+# Sauvegardes et fichiers temporaires
+*.backup*
+*.bak
+*.tmp
+index.sauvegarde.mjs
+index_ancien.mjs
+server.sauvegarde.mjs
+ameliorer_guide.ps1
+ameliorer_selection.ps1
+reparer_selection_temp.txt
+# Documents generes
+introductions_et_pu_*.docx
+# Archives locales
+*.zip
+# Dossiers locaux non necessaires au deploiement
+Videos/
+
+# Historique local : ne pas publier
+historique/
+
+# Sauvegardes de fichiers
+*.backup*
+*.bak
+*.tmp
+*.avant-refonte.*
+*.dashboard-*
+*.reparation-*

@@ -1,0 +1,16 @@
+{
+  "name": "agent-liturgie-gemini",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Assistant de rédaction liturgique catholique francophone utilisant Gemini et un corpus d'exemples locaux.",
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "dependencies": {
+    "@google/genai": "^1.11.0",
+    "docx": "^9.5.1",
+    "dotenv": "^16.6.1",
+    "express": "^5.3.0"
+  }
+}
