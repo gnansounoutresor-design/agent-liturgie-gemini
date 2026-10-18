@@ -76,6 +76,127 @@
   /* ---------- Raccourcis DOM ---------- */
   const $ = (id) => document.getElementById(id);
   const form = $('liturgyForm');
+
+  // AELF_AUTO_FILL_V1
+  const dateInput = $('date');
+  const dateField = dateInput ? dateInput.closest('.field') : null;
+  const aelfStatus = document.createElement('p');
+
+  aelfStatus.id = 'aelfStatus';
+  aelfStatus.setAttribute('role', 'status');
+  aelfStatus.setAttribute('aria-live', 'polite');
+  aelfStatus.style.marginTop = '8px';
+  aelfStatus.style.fontSize = '0.9rem';
+
+  if (dateField) dateField.appendChild(aelfStatus);
+
+  let aelfRequestId = 0;
+
+  function showAelfStatus(message, isError = false) {
+    aelfStatus.textContent = message;
+    aelfStatus.style.color = isError ? 'var(--danger, #b42318)' : '';
+  }
+
+  function setAelfField(name, value) {
+    const field = form.elements[name];
+    if (field && typeof value === 'string') {
+      field.value = value;
+      field.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  }
+
+  function selectLiturgicalYear(year) {
+    if (!year) return;
+    const radio = form.querySelector(
+      'input[name="anneeLiturgique"][value="' + year + '"]'
+    );
+    if (radio) {
+      radio.checked = true;
+      radio.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  }
+
+  function inferLiturgicalTime(celebration) {
+    const value = String(celebration || '').toLocaleLowerCase('fr');
+
+    if (value.includes('avent')) return 'Avent';
+    if (value.includes('carême')) return 'Carême';
+    if (value.includes('triduum') || value.includes('vendredi saint')) return 'Triduum pascal';
+    if (value.includes('pâques') || value.includes('pascal')) return 'Temps pascal';
+    if (value.includes('noël') || value.includes('noel')) return 'Temps de Noël';
+    if (value.includes('temps ordinaire')) return 'Temps ordinaire';
+
+    return '';
+  }
+
+  if (dateInput) {
+    dateInput.addEventListener('change', async () => {
+      const date = dateInput.value;
+      const requestId = ++aelfRequestId;
+
+      if (!date) {
+        showAelfStatus('');
+        return;
+      }
+
+      showAelfStatus('Recherche des lectures dans le calendrier AELF…');
+
+      try {
+        const response = await fetch(
+          '/api/liturgy?date=' + encodeURIComponent(date),
+          {
+            headers: { Accept: 'application/json' },
+            signal: AbortSignal.timeout(20000)
+          }
+        );
+
+        const data = await response.json();
+
+        if (requestId !== aelfRequestId) return;
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Impossible de récupérer les lectures.');
+        }
+
+        setAelfField('celebration', data.celebration || '');
+        setAelfField('premiereLecture', data.premiereLecture || '');
+        setAelfField('deuxiemeLecture', data.deuxiemeLecture || '');
+        setAelfField('evangile', data.evangile || '');
+
+        const liturgicalTime = data.tempsLiturgique || inferLiturgicalTime(data.celebration);
+        if (liturgicalTime) setAelfField('tempsLiturgique', liturgicalTime);
+
+        selectLiturgicalYear(data.anneeLiturgique || '');
+
+        const readings = [
+          ['Première lecture', data.premiereLecture, data.textePremiereLecture],
+          ['Psaume', data.psaume, data.textePsaume],
+          ['Deuxième lecture', data.deuxiemeLecture, data.texteDeuxiemeLecture],
+          ['Évangile', data.evangile, data.texteEvangile]
+        ]
+          .filter(item => item[1])
+          .map(item => item[0] + ' — ' + item[1] + (item[2] ? '\n' + item[2] : ''));
+
+        setAelfField('textesBibliques', readings.join('\n\n'));
+
+        if (!data.deuxiemeLectureDisponible) {
+          showAelfStatus(
+            'Calendrier récupéré, mais aucune deuxième lecture n’est indiquée pour cette date. Le format exige deux introductions : vérifie la célébration avant de générer.',
+            true
+          );
+        } else {
+          showAelfStatus('Lectures récupérées depuis l’AELF. Vérifie les informations avant de continuer.');
+        }
+      } catch (error) {
+        if (requestId !== aelfRequestId) return;
+        showAelfStatus(
+          error instanceof Error ? error.message : 'Erreur lors de la récupération du calendrier.',
+          true
+        );
+      }
+    });
+  }
+
   const steps = Array.from(document.querySelectorAll('.step'));
   const prevBtn = $('prevBtn');
   const nextBtn = $('nextBtn');

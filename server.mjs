@@ -7,6 +7,7 @@ import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 import { GoogleGenAI } from '@google/genai';
+import { getAelfLiturgy } from './aelf-calendar.mjs';
 import {
   Document,
   Packer,
@@ -294,6 +295,20 @@ function extractErrorMessage(error) {
 
   return message.slice(0, 500);
 }
+
+app.get('/api/liturgy', async (req, res) => {
+  try {
+    const date = String(req.query.date || '');
+    const liturgy = await getAelfLiturgy(date);
+    return res.json(liturgy);
+  } catch (error) {
+    return res.status(400).json({
+      error: error instanceof Error
+        ? error.message
+        : 'Impossible de récupérer le calendrier liturgique.'
+    });
+  }
+});
 
 app.get('/api/health', (_req, res) => {
   res.json({
