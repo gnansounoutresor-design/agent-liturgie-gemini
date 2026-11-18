@@ -309,23 +309,24 @@ async function createDocx(title, introductions, intentions, extras = {}) {
   return await Packer.toBuffer(doc);
 }
 
-function extractErrorMessage(error) {
+function extractErrorMessage(error, provider = '') {
   const message = String(error?.message || 'Erreur inconnue');
+  const service = provider || 'le fournisseur IA';
 
-  if (/API_KEY_INVALID|invalid api key|API key not valid/i.test(message)) {
-    return 'La clé API Gemini est invalide. Vérifie la clé saisie.';
+  if (/API_KEY_INVALID|invalid api key|API key not valid|HTTP 401/i.test(message)) {
+    return `La clé API de ${service} est invalide. Vérifie sa configuration.`;
   }
 
-  if (/quota|RESOURCE_EXHAUSTED/i.test(message)) {
-    return 'Le quota Gemini est atteint. Réessaie plus tard ou vérifie ton quota.';
+  if (/quota|RESOURCE_EXHAUSTED|rate.?limit|HTTP 429/i.test(message)) {
+    return `Le quota ou la limite de requêtes de ${service} est atteint. Vérifie ce compte ou réessaie plus tard.`;
   }
 
-  if (/503|UNAVAILABLE|high demand/i.test(message)) {
-    return 'Gemini est momentanément indisponible. Réessaie dans quelques instants.';
+  if (/503|UNAVAILABLE|high demand|HTTP 5\d\d/i.test(message)) {
+    return `${service} est momentanément indisponible. Réessaie dans quelques instants.`;
   }
 
   if (/fetch failed|ECONNRESET|ETIMEDOUT/i.test(message)) {
-    return 'Connexion à Gemini impossible. Vérifie ta connexion Internet.';
+    return `Connexion à ${service} impossible. Réessaie dans quelques instants.`;
   }
 
   return message.slice(0, 500);
@@ -461,22 +462,29 @@ async function authenticatedSupabaseUser(req) {
   return { url, anonKey, token, user };
 }
 
-async function generateWithFallback(prompt, system, personalGeminiKey = '') {
+async function generateWithFallback(prompt, system, personalGeminiKey = '', excludedProviders = []) {
   const failures = [];
+  const attemptedProviders = [...excludedProviders];
+  const excluded = new Set(excludedProviders);
   for (const provider of configuredProviders(personalGeminiKey)) {
+    if (excluded.has(provider.name)) continue;
     try {
       const text = await provider.run(prompt, system);
-      if (text) return { text, provider: provider.name, model: provider.model || '', degraded: false };
+      attemptedProviders.push(provider.name);
+      if (text) return { text, provider: provider.name, model: provider.model || '', degraded: false, attemptedProviders };
       failures.push(`${provider.name}: réponse vide`);
     } catch (error) {
-      failures.push(`${provider.name}: ${extractErrorMessage(error)}`);
+      attemptedProviders.push(provider.name);
+      failures.push(extractErrorMessage(error, provider.name));
       console.warn(`Fournisseur ${provider.name} indisponible, essai du secours.`);
     }
   }
   throw Object.assign(
     new Error(failures.length
-      ? 'Aucun fournisseur IA n’a pu générer le texte. Vérifie les clés et quotas du serveur, puis réessaie.'
-      : 'Aucun fournisseur IA n’est configuré. Configure Gemini, DeepSeek ou OpenAI avant de générer.'),
+      ? `Échec des fournisseurs IA configurés : ${failures.join(' ; ')}`
+      : excluded.size
+        ? 'Aucun autre fournisseur IA configuré ne reste pour produire une nouvelle version.'
+        : 'Aucun fournisseur IA n’est configuré. Configure Gemini, DeepSeek ou OpenAI avant de générer.'),
     { status: failures.length ? 502 : 503 }
   );
 }
@@ -622,7 +630,7 @@ app.post('/api/rewrite', async (req, res) => {
     const result = await generateWithFallback(prompt, system, personalKey);
     return res.json({ text: result.text, provider: result.provider, degraded: result.degraded, model: result.model });
   } catch (error) {
-    console.error('Erreur de réécriture Gemini :', extractErrorMessage(error));
+    console.error('Erreur de réécriture IA :', extractErrorMessage(error));
     return res.status(502).json({ error: extractErrorMessage(error) });
   }
 });
@@ -788,19 +796,23 @@ N'ajoute aucun commentaire avant ou après ce contenu.
     let introductions = [];
     let intentions = [];
     let errors = [];
-    for (let attempt = 0; attempt < 2; attempt += 1) {
+    const rejectedProviders = new Set();
+    const configuredCount = configuredProviders(personalKey).length;
+    const maxAttempts = Math.max(configuredCount, 1);
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
       const attemptPrompt = attempt === 0
         ? prompt
-        : `${prompt}\n\nCORRECTION REQUISE : la réponse précédente n'a pas passé le contrôle suivant : ${errors.join(' ')}. Corrige ces défauts, sans ajouter de commentaire.`;
-      result = await generateWithFallback(attemptPrompt, systemInstruction, personalKey);
+        : `${prompt}\n\nCORRECTION REQUISE : une première proposition n'a pas passé le contrôle suivant : ${errors.join(' ')}. Rédige une nouvelle version en corrigeant ces points et en respectant toutes les consignes, sans ajouter de commentaire.`;
+      result = await generateWithFallback(attemptPrompt, systemInstruction, personalKey, [...rejectedProviders]);
       generated = cleanText(result.text);
       introductions = extractIntroductions(generated).map(normalizeIntroduction).filter(Boolean);
       intentions = extractIntentions(generated).map(normalizeIntention).filter(Boolean);
       errors = qualityErrors(introductions, intentions, [lecture1, lecture2], textes);
       if (!errors.length) break;
+      result.attemptedProviders.forEach(provider => rejectedProviders.add(provider));
     }
     if (errors.length) {
-      return res.status(502).json({ error: `Le texte généré n’a pas passé le contrôle de qualité après deux tentatives : ${errors.join(' ')}` });
+      return res.status(502).json({ error: `Aucune proposition n’a passé les contrôles après réessai auprès des fournisseurs disponibles : ${errors.join(' ')}` });
     }
 
     introductions = introductions.map((intro, index) => {
