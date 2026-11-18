@@ -343,8 +343,12 @@
       if (cloudSyncConfigured && authToken()) loadCloudWorks();
       serverStatusChecked = true;
       const status = $('serviceStatusText');
-      const providerNames = data?.providers?.length ? data.providers.join(' → ') : 'mode local de secours';
-      if (status) status.textContent = `Génération disponible : ${providerNames}. Aucune clé personnelle requise.`;
+      const providerNames = Array.isArray(data?.providers)
+        ? data.providers.map((provider) => typeof provider === 'string' ? provider : `${provider.name} (${provider.model})`).join(' → ')
+        : '';
+      if (status) status.textContent = providerNames
+        ? `Fournisseurs IA configurés : ${providerNames}.`
+        : 'Aucun fournisseur IA n’est configuré sur le serveur. Une clé Gemini personnelle sera nécessaire.';
       if (personalKeyFallback) personalKeyFallback.hidden = false;
       keyInput.placeholder = serverKeyConfigured
         ? 'Facultatif : utiliser une autre clé'

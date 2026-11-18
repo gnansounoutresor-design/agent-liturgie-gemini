@@ -1,22 +1,41 @@
 ﻿const AELF_BASE = 'https://www.aelf.org';
 
-function getBeninToday() {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Africa/Porto-Novo',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit'
-  }).formatToParts(new Date());
-
-  const values = Object.fromEntries(parts.map(p => [p.type, p.value]));
-  return `${values.year}-${values.month}-${values.day}`;
-}
-
 function isValidDate(date) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return false;
   const parsed = new Date(`${date}T00:00:00Z`);
   return !Number.isNaN(parsed.getTime())
     && parsed.toISOString().slice(0, 10) === date;
+}
+
+function firstSundayOfAdvent(year) {
+  const date = new Date(Date.UTC(year, 10, 27));
+  date.setUTCDate(date.getUTCDate() + ((7 - date.getUTCDay()) % 7));
+  return date;
+}
+
+export function getLiturgicalYearInfo(dateIso) {
+  if (!isValidDate(dateIso)) throw new Error('Date invalide. Utilise le format AAAA-MM-JJ.');
+  const civilYear = Number(dateIso.slice(0, 4));
+  const advent = firstSundayOfAdvent(civilYear);
+  const yearEnding = dateIso >= advent.toISOString().slice(0, 10) ? civilYear + 1 : civilYear;
+  const cycles = ['C', 'A', 'B'];
+  const cycle = cycles[((yearEnding % 3) + 3) % 3];
+  return { yearEnding, cycle };
+}
+
+export function getSundaysOfLiturgicalYear(yearEnding) {
+  const year = Number(yearEnding);
+  if (!Number.isInteger(year) || year < 2001 || year > 2101) {
+    throw new Error('Année liturgique invalide. Indique une année de fin comprise entre 2001 et 2101.');
+  }
+  const first = firstSundayOfAdvent(year - 1);
+  const next = firstSundayOfAdvent(year);
+  const dates = [];
+  for (const date = new Date(first); date < next; date.setUTCDate(date.getUTCDate() + 7)) {
+    dates.push(date.toISOString().slice(0, 10));
+  }
+  const info = getLiturgicalYearInfo(dates[0]);
+  return { yearEnding: year, cycle: info.cycle, dates };
 }
 
 function decodeEntities(text) {
@@ -93,10 +112,6 @@ export async function getAelfLiturgy(date) {
     throw new Error('Date invalide. Utilise le format AAAA-MM-JJ.');
   }
 
-  if (date < getBeninToday()) {
-    throw new Error('La date choisie est passée au Bénin.');
-  }
-
   const url = `${AELF_BASE}/${date}/romain/messe`;
 
   let response;
@@ -130,12 +145,20 @@ export async function getAelfLiturgy(date) {
   const deuxieme = getReference(html, /^Deuxième lecture$/i);
   const evangile = getReference(html, /^Évangile$/i);
 
-  if (!premiere.reference || !evangile.reference) {
-    throw new Error('Les références bibliques n’ont pas pu être extraites de la page AELF.');
+  if (!premiere.reference || !deuxieme.reference || !evangile.reference) {
+    throw new Error('AELF n’a pas fourni les références de toutes les lectures attendues pour ce travail.');
   }
 
   const celebration = findCelebration(pageText);
-  const yearMatch = pageText.match(/Année ([ABC])/i);
+  const yearMatch = celebration.match(/Année ([ABC])/i) || pageText.match(/Année ([ABC])/i);
+  const textePremiereLecture = getReadingText(html, 1);
+  const textePsaume = getReadingText(html, 2);
+  const texteDeuxiemeLecture = getReadingText(html, 3);
+  const texteEvangile = getReadingText(html, 4);
+
+  if (!textePremiereLecture || !texteDeuxiemeLecture || !texteEvangile) {
+    throw new Error('AELF a fourni les références, mais le texte d’une lecture manque. Vérifie la date ou réessaie plus tard.');
+  }
 
   return {
     date,
@@ -144,16 +167,16 @@ export async function getAelfLiturgy(date) {
     anneeLiturgique: yearMatch ? yearMatch[1].toUpperCase() : '',
     premiereLecture: premiere.reference,
     titrePremiereLecture: premiere.title,
-    textePremiereLecture: getReadingText(html, 1),
+    textePremiereLecture,
     psaume: psaume.reference,
     titrePsaume: psaume.title,
-    textePsaume: getReadingText(html, 2),
+    textePsaume,
     deuxiemeLecture: deuxieme.reference,
     titreDeuxiemeLecture: deuxieme.title,
-    texteDeuxiemeLecture: getReadingText(html, 3),
+    texteDeuxiemeLecture,
     evangile: evangile.reference,
     titreEvangile: evangile.title,
-    texteEvangile: getReadingText(html, 4),
+    texteEvangile,
     deuxiemeLectureDisponible: Boolean(deuxieme.reference)
   };
 }

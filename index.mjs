@@ -67,6 +67,17 @@ async function ask(rl, label, optional = false) {
   }
 }
 
+async function askMultiline(rl, label) {
+  console.log(`${label}\nColle les textes avec leurs titres, puis termine par une ligne contenant uniquement FIN.`);
+  const lines = [];
+  while (true) {
+    const line = await rl.question('');
+    if (line.trim().toLocaleUpperCase('fr') === 'FIN') break;
+    lines.push(line);
+  }
+  return lines.join('\n').trim();
+}
+
 // ======================================================
 // 3. CORPUS ET EXEMPLES DE STYLE
 // ======================================================
@@ -105,8 +116,7 @@ function selectExamples(examples, query, limit = 3) {
 function formatExample(e, i) {
   return `
 EXEMPLE DE STYLE ${i + 1}
-ATTENTION : EXTRACTION AUTOMATIQUE NON VALIDÉE.
-UTILISER UNIQUEMENT POUR LE TON ET LA FORMULATION.
+EXEMPLE APPROUVÉ — UTILISER UNIQUEMENT POUR LE TON ET LA FORMULATION.
 
 Titre : ${e.title || e.filename || 'Sans titre'}
 
@@ -131,7 +141,7 @@ ${e.pu4 || '[Non extraite]'}
 }
 
 async function readCorpus() {
-  const file = path.join(CORPUS_DIR, 'exemples_uniques_a_revoir.jsonl');
+  const file = path.join(CORPUS_DIR, 'exemples_valides.jsonl');
 
   try {
     const raw = await fs.readFile(file, 'utf8');
@@ -357,6 +367,28 @@ function countSentences(text) {
     .filter(Boolean).length;
 }
 
+function parseSourceReadings(text) {
+  const result = { premiere: '', psaume: '', deuxieme: '', evangile: '', references: {} };
+  const patterns = [
+    ['premiere', /^Premi[eè]re lecture(?:\s*[—–:-]\s*(.*))?$/i],
+    ['psaume', /^Psaume(?:\s*[—–:-]\s*(.*))?$/i],
+    ['deuxieme', /^Deuxi[eè]me lecture(?:\s*[—–:-]\s*(.*))?$/i],
+    ['evangile', /^Évangile(?:\s*[—–:-]\s*(.*))?$/i]
+  ];
+  let active = '';
+  for (const raw of String(text || '').split(/\r?\n/)) {
+    const line = raw.trim();
+    const found = patterns.map(([key, pattern]) => ({ key, match: line.match(pattern) })).find(item => item.match);
+    if (found) {
+      active = found.key;
+      if (found.match[1]) result.references[active] = found.match[1].trim();
+    } else if (active && line) {
+      result[active] += `${result[active] ? ' ' : ''}${line}`;
+    }
+  }
+  return result;
+}
+
 function checkQuality(text, references) {
   const content = normalizeText(text);
   const errors = [];
@@ -400,18 +432,25 @@ function checkQuality(text, references) {
     } else {
       passed.push('Les deux introductions sont présentes.');
 
-      for (const [label, line] of [
-        ['Première lecture', intro1],
-        ['Deuxième lecture', intro2]
+      for (const [label, line, reference] of [
+        ['Première lecture', intro1, references?.lecture1],
+        ['Deuxième lecture', intro2, references?.lecture2]
       ]) {
         const body = line.replace(/^[-*•]?\s*[^:]+:\s*/, '').trim();
 
         if (countSentences(body) !== 1) {
           errors.push(`${label} : le texte doit contenir exactement une phrase.`);
         }
+        if (body.length < 35 || body.length > 360) {
+          errors.push(`${label} : l’introduction doit rester concise et facile à proclamer.`);
+        }
 
         if (/\[À VÉRIFIER\]|\[A VERIFIER\]/i.test(body)) {
           warnings.push(`${label} : une information nécessite une vérification.`);
+        }
+
+        if (reference && !body.includes(reference)) {
+          errors.push(`${label} : la référence fournie doit apparaître à l’identique.`);
         }
       }
 
@@ -443,13 +482,31 @@ function checkQuality(text, references) {
         const words = item.split(/\s+/).filter(Boolean).length;
 
         if (words < 18) {
-          warnings.push(`Intention ${number} : texte très court (${words} mots).`);
+          errors.push(`Intention ${number} : texte trop court (${words} mots).`);
         }
 
         if (words > 85) {
-          warnings.push(`Intention ${number} : texte très long (${words} mots).`);
+          errors.push(`Intention ${number} : texte trop long (${words} mots).`);
         }
+
+        const topicPatterns = [
+          /(?:eglise|pape|eveques?|pretres?|mission)/i,
+          /(?:dirigeants?|responsables|autorites|justice|paix|bien commun)/i,
+          /(?:malades?|pauvres?|souffr\w*|opprim\w*|victimes?|isol\w*|eprouv\w*)/i,
+          /(?:assemblee|communaute|paroisse|fideles|rassembl\w*)/i
+        ];
+        const normalizedItem = item.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        if (!topicPatterns[index].test(normalizedItem)) errors.push(`Intention ${number} : le thème attendu n’est pas identifiable.`);
       });
+
+      if (references?.textes) {
+        const stopWords = new Set(['notre', 'votre', 'leurs', 'cette', 'comme', 'ainsi', 'parole', 'seigneur', 'christ', 'jesus', 'dieu', 'pour', 'dans', 'avec', 'nous', 'vous', 'afin', 'ceux', 'toute', 'tous', 'lecture', 'premiere', 'deuxieme', 'evangile', 'psaume']);
+        const sourceTerms = new Set(String(references.textes).toLocaleLowerCase('fr').normalize('NFD').replace(/[\u0300-\u036f]/g, '').match(/[a-z]{5,}/g) || []);
+        const assemblyTerms = String(items[3] || '').toLocaleLowerCase('fr').normalize('NFD').replace(/[\u0300-\u036f]/g, '').match(/[a-z]{5,}/g) || [];
+        if (!assemblyTerms.some(term => !stopWords.has(term) && sourceTerms.has(term))) {
+          errors.push('L’intention pour l’assemblée ne reprend aucun thème précis des lectures fournies.');
+        }
+      }
     }
   }
 
@@ -698,8 +755,16 @@ async function main() {
     const lecture1 = await ask(rl, 'Première lecture : livre, chapitre et versets');
     const lecture2 = await ask(rl, 'Deuxième lecture : livre, chapitre et versets');
     const evangile = await ask(rl, 'Évangile : livre, chapitre et versets');
-    const textes = await ask(rl, 'Textes bibliques ou extraits', true);
+    const textes = await askMultiline(rl, 'Textes complets sous les titres Première lecture, Psaume, Deuxième lecture et Évangile');
     const modele = await ask(rl, 'Consignes locales / particularités', true);
+
+    const sourceReadings = parseSourceReadings(textes);
+    if (sourceReadings.premiere.length < 30 || sourceReadings.deuxieme.length < 30 || sourceReadings.evangile.length < 30) {
+      throw new Error('Les textes complets de la première lecture, de la deuxième lecture et de l’Évangile sont requis.');
+    }
+    if (sourceReadings.references.premiere !== lecture1 || sourceReadings.references.deuxieme !== lecture2 || sourceReadings.references.evangile !== evangile) {
+      throw new Error('Les références des titres de lecture doivent correspondre exactement aux références saisies.');
+    }
 
     const title = `${celebration} ${temps} ${date}`;
 
@@ -712,7 +777,7 @@ async function main() {
 
     const relevant = selectExamples(
       examples,
-      `${celebration} ${temps} ${lecture1} ${lecture2} ${evangile}`,
+      `${celebration} ${temps} ${lecture1} ${lecture2} ${evangile} ${textes}`,
       3
     );
 
@@ -724,13 +789,6 @@ async function main() {
 
     // N'envoyer à Gemini que quelques travaux antérieurs pour aider
     // à varier les formulations. Le corpus de référence reste séparé.
-    const previousTexts = history
-      .slice(-8)
-      .map((entry, i) =>
-        `GÉNÉRATION ANTÉRIEURE ${i + 1} :\n${entry.text || ''}`
-      )
-      .join('\n\n---\n\n');
-
     const systemInstruction = `
 Tu es un assistant de rédaction liturgique catholique francophone.
 
@@ -744,12 +802,11 @@ GUIDE DE STYLE LOCAL :
 ${style}
 
 FIABILITÉ :
-- Les exemples locaux peuvent provenir d'extractions automatiques non validées.
-- Utilise-les uniquement comme références de style, jamais comme autorité biblique.
-- N'invente pas de références bibliques.
-- Conserve les références fournies par l'utilisateur.
-- Si une donnée est incertaine, signale-le sans inventer.
-- N'affirme pas avoir consulté une source que tu n'as pas consultée.
+- Les exemples locaux approuvés servent uniquement de références de style.
+- Appuie-toi exclusivement sur les textes bibliques complets fournis.
+- N'invente ni événement, ni personnage, ni citation, ni référence.
+- Conserve exactement les références fournies dans chaque introduction.
+- Si les textes fournis ne permettent pas une formulation sûre, signale le manque au lieu de compléter de mémoire.
 - Écris en français naturel, sobre, pastoral et facile à proclamer oralement.
 
 DIVERSITÉ :
@@ -773,16 +830,13 @@ DEUXIÈME LECTURE : ${lecture2}
 ÉVANGILE : ${evangile}
 
 TEXTES BIBLIQUES FOURNIS :
-${textes || '[Aucun texte intégral fourni]'}
+${textes}
 
 CONSIGNES LOCALES :
 ${modele || '[Aucune]'}
 
 EXEMPLES LOCAUX — STYLE SEULEMENT :
 ${examplesText || '[Aucun exemple disponible]'}
-
-TRAVAUX ANTÉRIEURS À NE PAS COPIER :
-${previousTexts || '[Aucune génération antérieure]'}
 
 FORMAT OBLIGATOIRE :
 
@@ -840,7 +894,7 @@ N'ajoute aucune autre section.
 
     let generated = await generate(basePrompt);
     let attempts = 1;
-    let report = checkQuality(generated, { lecture1, lecture2 });
+    let report = checkQuality(generated, { lecture1, lecture2, textes });
 
     // Correction structurelle si nécessaire.
     if (!report.valid && attempts <= MAX_CORRECTIONS) {
@@ -863,7 +917,7 @@ Retourne uniquement le texte corrigé, sans commentaire.
 
       try {
         const corrected = await generate(correctionPrompt, 0.25);
-        const correctedReport = checkQuality(corrected, { lecture1, lecture2 });
+        const correctedReport = checkQuality(corrected, { lecture1, lecture2, textes });
 
         if (correctedReport.errors.length <= report.errors.length) {
           generated = corrected;
@@ -896,9 +950,6 @@ Le texte ressemble trop à des travaux précédents.
 TEXTE À REFORMULER :
 ${generated}
 
-TRAVAUX PRÉCÉDENTS :
-${previousTexts || '[Aucun]'}
-
 CONSIGNES :
 - Conserve exactement les deux introductions et les quatre intentions.
 - Respecte les références bibliques fournies.
@@ -913,8 +964,8 @@ CONSIGNES :
       attempts++;
 
       try {
-        const alternative = await generate(reformulationPrompt, 0.8);
-        const alternativeReport = checkQuality(alternative, { lecture1, lecture2 });
+        const alternative = await generate(reformulationPrompt, 0.45);
+        const alternativeReport = checkQuality(alternative, { lecture1, lecture2, textes });
         const alternativeComparisons = compareWithHistory(alternative, history);
         const alternativeScore = alternativeComparisons[0]?.score || 0;
 
@@ -941,8 +992,12 @@ CONSIGNES :
     }
 
     // Vérification finale et enregistrement.
-    report = checkQuality(generated, { lecture1, lecture2 });
+    report = checkQuality(generated, { lecture1, lecture2, textes });
     comparisons = compareWithHistory(generated, history);
+
+    if (!report.valid) {
+      throw new Error(`Le texte a échoué aux contrôles après correction. Aucun document n’a été enregistré. ${report.errors.join(' ')}`);
+    }
 
     console.log('\n========== TEXTE GÉNÉRÉ ==========\n');
     console.log(generated);

@@ -1,37 +1,20 @@
-AGENT LITURGIQUE GEMINI — ÉTAPE 3
+ASSISTANT LITURGIQUE — DÉMARRAGE
 
-PRÉREQUIS
-- Node.js installé (de préférence version LTS récente).
-- Une clé API Gemini obtenue depuis Google AI Studio.
-- Connexion Internet.
+Cette version est une application web. `npm start` démarre le serveur ; il ne lance pas l’ancien questionnaire en ligne de commande.
 
-INSTALLATION SOUS WINDOWS
-1. Décompresse le dossier dans un emplacement simple, par exemple C:\Users\HP\agent_liturgie_gemini.
-2. Ouvre ce dossier dans l'Explorateur de fichiers.
-3. Dans la barre d'adresse du dossier, tape cmd puis Entrée.
-4. Dans la fenêtre du terminal, exécute : npm install
-5. Copie le fichier .env.example et renomme la copie en .env.
-   Important : active « Afficher > Extensions de noms de fichiers » dans l'Explorateur pour éviter .env.txt.
-6. Ouvre .env avec le Bloc-notes et remplace COLLE_TA_CLE_ICI par ta clé API. Ne mets pas de guillemets et ne partage pas ce fichier.
-7. Exécute : npm start
-8. Réponds aux questions. Le programme affichera le texte et créera un fichier Word .docx dans le dossier du projet.
+INSTALLATION
+1. Installez Node.js 20 ou une version ultérieure.
+2. Ouvrez ce dossier dans un terminal et exécutez `npm install`.
+3. Copiez `.env.example` vers `.env` et configurez au moins un fournisseur IA : Gemini, DeepSeek ou OpenAI.
+4. Exécutez `npm start`, puis ouvrez http://127.0.0.1:3000.
 
-SI LE MODÈLE EST REFUSÉ
-Ouvre .env et remplace GEMINI_MODEL par un modèle de génération de texte actuellement disponible dans ton compte Google AI Studio. Ne modifie pas le code pour coller la clé API dedans.
-
-CE QUE FAIT CETTE VERSION
-- Envoie à Gemini un guide de style local.
-- Sélectionne jusqu'à trois exemples du corpus selon des mots-clés.
-- Demande à Gemini de s'inspirer du style sans copier les exemples ni en tirer les lectures officielles.
-- Enregistre la réponse en Word.
-
-CE QU'ELLE NE FAIT PAS ENCORE
-- Elle ne consulte pas automatiquement le calendrier liturgique officiel.
-- Elle ne vérifie pas les références bibliques sur AELF.
-- Elle n'entraîne pas les paramètres du modèle : c'est une approche par prompt + exemples (RAG simplifié).
-- Les exemples du corpus ont été extraits automatiquement et nécessitent encore une validation humaine.
+GÉNÉRATION
+- Choisissez la date de célébration et chargez les lectures depuis l’AELF. Les dates passées sont acceptées.
+- Le travail assisté exige les textes complets de la première lecture, de la deuxième lecture et de l’Évangile ; le psaume est conservé lorsqu’il est fourni.
+- Sans fournisseur IA fonctionnel, aucune intention générique n’est présentée comme un travail généré. L’application affiche une erreur explicite.
+- Les résultats passent des contrôles automatiques de structure, longueur, références, formule finale et thèmes des intentions. Une relecture liturgique demeure nécessaire.
 
 SÉCURITÉ
-- Ne partage jamais .env, ta clé API ou une capture d'écran où elle apparaît.
-- Ne mets pas la clé API dans un fichier public ou dans GitHub.
-- Vérifie les textes officiels et les références avant une utilisation liturgique.
+- Ne partagez jamais `.env`, une clé API ni une capture qui les révèle.
+- Les clés restent dans l’environnement du serveur. Une clé Gemini personnelle saisie dans l’application n’est utilisée que pour la requête en cours.
+- Les textes du dossier `corpus/` ne servent de modèles que s’ils sont approuvés et nommés `exemples_valides.*`.

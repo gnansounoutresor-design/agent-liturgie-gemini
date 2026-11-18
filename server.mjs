@@ -12,6 +12,8 @@ import {
   Document,
   Packer,
   Paragraph,
+  TextRun,
+  AlignmentType,
   HeadingLevel
 } from 'docx';
 
@@ -83,7 +85,8 @@ async function collectCorpus(directory, depth = 0) {
     if (
       entry.name.startsWith('.') ||
       entry.name === 'node_modules' ||
-      entry.name === 'historique'
+      entry.name === 'historique' ||
+      /a[_-]?revoir|non[_-]?valid[ée]e?/i.test(entry.name)
     ) {
       continue;
     }
@@ -95,7 +98,7 @@ async function collectCorpus(directory, depth = 0) {
       continue;
     }
 
-    if (!/\.(md|txt|json|jsonl)$/i.test(entry.name)) continue;
+    if (!/^exemples_valides\.(md|txt|json|jsonl)$/i.test(entry.name)) continue;
 
     if (entry.name === 'generations.jsonl' ||
         entry.name === 'valides.jsonl') {
@@ -227,31 +230,31 @@ function normalizeIntention(value) {
 
 async function createDocx(title, introductions, intentions, extras = {}) {
   const children = [];
-  if (extras.date) children.push(new Paragraph({ text: extras.date }));
-  if (extras.tone) children.push(new Paragraph({ text: `Ton de l’assemblée : ${extras.tone}` }));
   children.push(
     new Paragraph({
       text: title,
-      heading: HeadingLevel.TITLE
+      heading: HeadingLevel.TITLE,
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 360 }
     })
   );
-  if (extras.welcome) {
-    children.push(
-      new Paragraph({ text: 'MOT D’ACCUEIL', heading: HeadingLevel.HEADING_1 }),
-      new Paragraph({ text: extras.welcome })
-    );
-  }
+  if (extras.date) children.push(new Paragraph({ text: extras.date, alignment: AlignmentType.CENTER }));
+  if (extras.tone) children.push(new Paragraph({ text: `Ton de l’assemblée : ${extras.tone}`, alignment: AlignmentType.CENTER, spacing: { after: 240 } }));
+  if (extras.welcome) children.push(
+    new Paragraph({ text: 'MOT D’ACCUEIL', heading: HeadingLevel.HEADING_1 }),
+    new Paragraph({ text: extras.welcome })
+  );
   if (Array.isArray(extras.readings) && extras.readings.length) {
     children.push(new Paragraph({ text: 'LECTURES DU JOUR', heading: HeadingLevel.HEADING_1 }));
-    extras.readings.forEach((reading) => {
-      children.push(new Paragraph({ text: `${reading.label} — ${reading.reference}`, heading: HeadingLevel.HEADING_2 }));
-      if (reading.text) children.push(new Paragraph({ text: reading.text }));
-    });
+    extras.readings.forEach((reading) => children.push(
+      new Paragraph({ text: `${reading.label} — ${reading.reference}`, heading: HeadingLevel.HEADING_2 }),
+      ...(reading.text ? [new Paragraph({ text: reading.text })] : [])
+    ));
   }
   children.push(
     new Paragraph({ text: 'INTRODUCTIONS AUX LECTURES', heading: HeadingLevel.HEADING_1 }),
     new Paragraph({ text: 'Première lecture', heading: HeadingLevel.HEADING_2 }),
-    new Paragraph({ text: introductions[0] })
+    new Paragraph({ text: introductions[0], spacing: { after: 240 } })
   );
   if (extras.psalmIntro) children.push(
     new Paragraph({ text: 'Psaume', heading: HeadingLevel.HEADING_2 }),
@@ -259,34 +262,48 @@ async function createDocx(title, introductions, intentions, extras = {}) {
   );
   children.push(
     new Paragraph({ text: 'Deuxième lecture', heading: HeadingLevel.HEADING_2 }),
-    new Paragraph({ text: introductions[1] }),
-    new Paragraph({ text: 'PRIÈRE UNIVERSELLE', heading: HeadingLevel.HEADING_1 })
+    new Paragraph({ text: introductions[1], spacing: { after: 360 } }),
+    new Paragraph({ text: 'PRIÈRES UNIVERSELLES', heading: HeadingLevel.HEADING_1 })
   );
 
   intentions.forEach((intention, index) => {
+    const response = 'Seigneur, nous te prions.';
+    const body = intention.endsWith(response)
+      ? intention.slice(0, -response.length).trim()
+      : intention.trim();
     children.push(
       new Paragraph({
-        text: `${index + 1}. ${intention}`
+        children: [
+          new TextRun({ text: `PU${index + 1} : `, bold: true }),
+          new TextRun({ text: body })
+        ],
+        spacing: { after: 100 }
       }),
-      new Paragraph({ text: '' })
+      new Paragraph({
+        text: response,
+        alignment: AlignmentType.RIGHT,
+        spacing: { after: 300 }
+      })
     );
   });
-
   if (extras.conclusion) children.push(
     new Paragraph({ text: 'MOT DE CONCLUSION', heading: HeadingLevel.HEADING_1 }),
     new Paragraph({ text: extras.conclusion })
   );
 
-  children.push(
-    new Paragraph({
-      text:
-        'Note : vérifier les références bibliques et relire les textes ' +
-        'avant leur utilisation pendant la célébration.'
-    })
-  );
-
   const doc = new Document({
-    sections: [{ children }]
+    styles: {
+      default: {
+        document: {
+          run: { font: 'Aptos', size: 23 },
+          paragraph: { spacing: { after: 120, line: 300 } }
+        }
+      }
+    },
+    sections: [{
+      properties: { page: { margin: { top: 1080, right: 1080, bottom: 1080, left: 1080 } } },
+      children
+    }]
   });
 
   return await Packer.toBuffer(doc);
@@ -317,15 +334,15 @@ function extractErrorMessage(error) {
 function configuredProviders(personalGeminiKey = '') {
   const providers = [];
   const geminiKey = String(process.env.GEMINI_API_KEY || personalGeminiKey).trim();
-  if (geminiKey) providers.push({ name: 'Gemini', run: (prompt, system) => callGemini(geminiKey, prompt, system) });
+  if (geminiKey) providers.push({ name: 'Gemini', model: MODEL, run: (prompt, system) => callGemini(geminiKey, prompt, system) });
   if (process.env.DEEPSEEK_API_KEY) providers.push({ name: 'DeepSeek', run: (prompt, system) => callOpenAICompatible({
     key: process.env.DEEPSEEK_API_KEY, model: DEEPSEEK_MODEL,
     endpoint: process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com/chat/completions', prompt, system
-  }) });
+  }), model: DEEPSEEK_MODEL });
   if (process.env.OPENAI_API_KEY) providers.push({ name: 'OpenAI', run: (prompt, system) => callOpenAICompatible({
     key: process.env.OPENAI_API_KEY, model: OPENAI_MODEL,
     endpoint: 'https://api.openai.com/v1/chat/completions', prompt, system
-  }) });
+  }), model: OPENAI_MODEL });
   return providers;
 }
 
@@ -333,7 +350,7 @@ async function callGemini(apiKey, prompt, system) {
   const ai = new GoogleGenAI({ apiKey });
   const response = await ai.models.generateContent({
     model: MODEL, contents: prompt,
-    config: { systemInstruction: system, temperature: 0.7, maxOutputTokens: 3500, httpOptions: { timeout: 35000 } }
+    config: { systemInstruction: system, temperature: 0.4, maxOutputTokens: 3500, httpOptions: { timeout: 35000 } }
   });
   return cleanText(response.text);
 }
@@ -341,7 +358,7 @@ async function callGemini(apiKey, prompt, system) {
 async function callOpenAICompatible({ key, model, endpoint, prompt, system }) {
   const response = await fetch(endpoint, {
     method: 'POST', headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model, temperature: 0.7, max_tokens: 3500, messages: [
+    body: JSON.stringify({ model, temperature: 0.4, max_tokens: 3500, messages: [
       { role: 'system', content: system }, { role: 'user', content: prompt }
     ] }), signal: AbortSignal.timeout(35000)
   });
@@ -350,12 +367,65 @@ async function callOpenAICompatible({ key, model, endpoint, prompt, system }) {
   return cleanText(data?.choices?.[0]?.message?.content);
 }
 
-function localDraft({ celebration, premiereLecture, deuxiemeLecture, evangile, ton }) {
-  const tone = /festif|chaleureux|fraternel/i.test(ton || '') ? 'avec confiance et fraternité' : 'dans le recueillement';
-  const one = premiereLecture || 'la première lecture';
-  const two = deuxiemeLecture || 'la deuxième lecture';
-  const gospel = evangile || celebration || 'l’Évangile du jour';
-  return `## Introductions aux lectures\n\n**Première lecture** : Écoutons la Parole de Dieu dans ${one}, qui nous invite à accueillir son appel ${tone}.\n\n**Deuxième lecture** : Dans ${two}, laissons-nous éclairer par l’espérance et la fidélité que Dieu fait grandir en son peuple.\n\n## Prière universelle\n\n1. Pour l’Église, afin qu’elle annonce avec joie la Bonne Nouvelle de ${gospel}, et accompagne chacun sur le chemin de la foi. Seigneur, nous te prions.\n\n2. Pour les responsables des nations, afin qu’ils servent la justice, protègent les plus fragiles et travaillent à la paix. Seigneur, nous te prions.\n\n3. Pour les personnes malades, isolées, pauvres ou éprouvées, afin qu’elles trouvent réconfort, solidarité et espérance. Seigneur, nous te prions.\n\n4. Pour notre assemblée réunie aujourd’hui, afin que ${celebration || 'la Parole entendue'} porte des fruits dans nos vies et nos engagements. Seigneur, nous te prions.`;
+function parseReadingTexts(text) {
+  const labels = [
+    ['premiere', /^Premi[eè]re lecture(?:\s*[—–:-]\s*(.*))?$/i],
+    ['psaume', /^Psaume(?:\s*[—–:-]\s*(.*))?$/i],
+    ['deuxieme', /^Deuxi[eè]me lecture(?:\s*[—–:-]\s*(.*))?$/i],
+    ['evangile', /^Évangile(?:\s*[—–:-]\s*(.*))?$/i]
+  ];
+  const result = { premiere: '', psaume: '', deuxieme: '', evangile: '', references: {} };
+  let active = '';
+  for (const rawLine of String(text || '').split(/\r?\n/)) {
+    const line = rawLine.trim();
+    const header = labels.map(([key, pattern]) => ({ key, match: line.match(pattern) })).find(item => item.match);
+    if (header) {
+      active = header.key;
+      if (header.match[1]) result.references[active] = header.match[1].trim();
+      continue;
+    }
+    if (active && line) result[active] += `${result[active] ? ' ' : ''}${line}`;
+  }
+  return result;
+}
+
+function normalizeReference(reference) {
+  return String(reference || '').toLocaleLowerCase('fr').normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+}
+
+function sentenceCount(text) {
+  const protectedText = String(text || '').replace(/\b(?:M|Mme|Mlle|St|Ste)\./gi, match => match.replace('.', '<POINT>'));
+  return protectedText.split(/[.!?]+(?:\s|$)/).map(value => value.trim()).filter(Boolean).length;
+}
+
+function qualityErrors(introductions, intentions, references, readingTexts) {
+  const errors = [];
+  if (introductions.length !== 2) errors.push('Deux introductions sont requises.');
+  if (intentions.length !== 4) errors.push('Quatre intentions sont requises.');
+  introductions.forEach((intro, index) => {
+    if (sentenceCount(intro) !== 1) errors.push(`L’introduction ${index + 1} doit contenir une seule phrase.`);
+    if (intro.length < 35 || intro.length > 360) errors.push(`L’introduction ${index + 1} est trop courte ou trop longue.`);
+  });
+  const categories = [
+    /(?:eglise|pape|eveques?|pretres?|mission pastorale)/i,
+    /(?:dirigeants?|responsables|autorites|gouvernements?|justice|paix|bien commun)/i,
+    /(?:malades?|pauvres?|souffr\w*|opprim\w*|victimes?|isol\w*|eprouv\w*)/i,
+    /(?:assemblee|communaute|paroisse|fideles|rassembl\w*)/i
+  ];
+  intentions.forEach((intention, index) => {
+    const words = intention.split(/\s+/).filter(Boolean).length;
+    const normalizedIntention = intention.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    if (!/Seigneur,\s*nous te prions\.$/i.test(intention)) errors.push(`L’intention ${index + 1} doit finir exactement par « Seigneur, nous te prions. »`);
+    if (words < 18 || words > 85) errors.push(`L’intention ${index + 1} doit compter entre 18 et 85 mots.`);
+    if (categories[index] && !categories[index].test(normalizedIntention)) errors.push(`L’intention ${index + 1} ne correspond pas assez clairement à son thème attendu.`);
+  });
+  const sourceTerms = new Set(String(readingTexts || '').toLocaleLowerCase('fr').normalize('NFD').replace(/[\u0300-\u036f]/g, '').match(/[a-z]{5,}/g) || []);
+  const assemblyTerms = String(intentions[3] || '').toLocaleLowerCase('fr').normalize('NFD').replace(/[\u0300-\u036f]/g, '').match(/[a-z]{5,}/g) || [];
+  const stopWords = new Set(['notre', 'votre', 'leurs', 'cette', 'comme', 'ainsi', 'parole', 'seigneur', 'christ', 'jesus', 'dieu', 'pour', 'dans', 'avec', 'nous', 'vous', 'afin', 'ceux', 'toute', 'tous', 'lecture', 'premiere', 'deuxieme', 'evangile', 'psaume']);
+  if (assemblyTerms.filter(term => !stopWords.has(term) && sourceTerms.has(term)).length === 0) errors.push('La quatrième intention ne reprend aucun thème précis des lectures fournies.');
+  if (!references[0] || !references[1]) errors.push('Les références des deux lectures sont manquantes.');
+  return errors;
 }
 
 function supabaseConfig() {
@@ -391,19 +461,24 @@ async function authenticatedSupabaseUser(req) {
   return { url, anonKey, token, user };
 }
 
-async function generateWithFallback(prompt, system, localText, personalGeminiKey = '') {
+async function generateWithFallback(prompt, system, personalGeminiKey = '') {
   const failures = [];
   for (const provider of configuredProviders(personalGeminiKey)) {
     try {
       const text = await provider.run(prompt, system);
-      if (text) return { text, provider: provider.name, degraded: false };
+      if (text) return { text, provider: provider.name, model: provider.model || '', degraded: false };
       failures.push(`${provider.name}: réponse vide`);
     } catch (error) {
       failures.push(`${provider.name}: ${extractErrorMessage(error)}`);
       console.warn(`Fournisseur ${provider.name} indisponible, essai du secours.`);
     }
   }
-  return { text: localText, provider: 'local', degraded: true, detail: failures.join(' | ') };
+  throw Object.assign(
+    new Error(failures.length
+      ? 'Aucun fournisseur IA n’a pu générer le texte. Vérifie les clés et quotas du serveur, puis réessaie.'
+      : 'Aucun fournisseur IA n’est configuré. Configure Gemini, DeepSeek ou OpenAI avant de générer.'),
+    { status: failures.length ? 502 : 503 }
+  );
 }
 
 app.get('/api/liturgy', async (req, res) => {
@@ -412,7 +487,7 @@ app.get('/api/liturgy', async (req, res) => {
     const liturgy = await getAelfLiturgy(date);
     return res.json(liturgy);
   } catch (error) {
-    return res.status(400).json({
+    return res.status(/Date invalide/.test(String(error?.message || '')) ? 400 : 502).json({
       error: error instanceof Error
         ? error.message
         : 'Impossible de récupérer le calendrier liturgique.'
@@ -519,14 +594,14 @@ app.post('/api/export-docx', async (req, res) => {
 });
 
 app.get('/api/health', (_req, res) => {
-  const providers = configuredProviders().map((provider) => provider.name);
+  const providers = configuredProviders().map((provider) => ({ name: provider.name, model: provider.model }));
   res.json({
     ok: true,
     service: 'assistant-liturgique',
     model: MODEL,
     geminiConfigured: Boolean(process.env.GEMINI_API_KEY),
     providers,
-    localFallback: true,
+    localFallback: false,
     cloudSyncConfigured: Boolean(supabaseConfig().url && supabaseConfig().anonKey)
   });
 });
@@ -544,12 +619,8 @@ app.post('/api/rewrite', async (req, res) => {
 
     const system = 'Tu es un rédacteur liturgique catholique francophone. Réécris uniquement le passage demandé, avec un ton pastoral et facile à proclamer. Préserve fidèlement le sens. Une intention se termine exactement par « Seigneur, nous te prions. ». N’ajoute aucun titre ni commentaire.';
     const prompt = `Type : ${isIntroduction ? 'introduction à une lecture' : 'intention de prière universelle'}\nRéférence : ${reference || 'aucune'}\nConsigne : ${instruction || 'Rendre le texte plus clair et naturel à proclamer'}\n\nTexte à reprendre :\n${content}`;
-    const result = await generateWithFallback(prompt, system, content, personalKey);
-    let text = result.text;
-    if (result.provider === 'local' && !isIntroduction && !/Seigneur,\s*nous te prions\.?$/i.test(text)) {
-      text = `${text.replace(/[.!?\s]+$/, '')}. Seigneur, nous te prions.`;
-    }
-    return res.json({ text, provider: result.provider, degraded: result.degraded });
+    const result = await generateWithFallback(prompt, system, personalKey);
+    return res.json({ text: result.text, provider: result.provider, degraded: result.degraded, model: result.model });
   } catch (error) {
     console.error('Erreur de réécriture Gemini :', extractErrorMessage(error));
     return res.status(502).json({ error: extractErrorMessage(error) });
@@ -570,7 +641,7 @@ app.post('/api/generate', async (req, res) => {
     const lecture1 = getField(req.body, 'premiereLecture', 1000);
     const lecture2 = getField(req.body, 'deuxiemeLecture', 1000);
     const evangile = getField(req.body, 'evangile', 1000);
-    const textes = getField(req.body, 'textesBibliques', 12000);
+    const textes = getField(req.body, 'textesBibliques', 24000);
     const consignes = getField(req.body, 'consignes', 4000);
     const ton = getField(req.body, 'ton', 120) || 'Paroissial, sobre';
 
@@ -580,10 +651,34 @@ app.post('/api/generate', async (req, res) => {
       });
     }
 
-    if (!lecture1 || !lecture2) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(`${date}T00:00:00Z`)) || new Date(`${date}T00:00:00Z`).toISOString().slice(0, 10) !== date) {
+      return res.status(400).json({ error: 'Choisis une date valide, puis charge les lectures correspondantes depuis l’AELF.' });
+    }
+
+    if (!['A', 'B', 'C'].includes(annee.toUpperCase())) {
+      return res.status(400).json({ error: 'Sélectionne l’année liturgique A, B ou C après le chargement de l’AELF.' });
+    }
+
+    if (!lecture1 || !lecture2 || !evangile) {
       return res.status(400).json({
-        error: 'Renseigne les références de la première et de la deuxième lecture.'
+        error: 'Renseigne les références de la première lecture, de la deuxième lecture et de l’Évangile.'
       });
+    }
+
+    const sourceReadings = parseReadingTexts(textes);
+    if (sourceReadings.premiere.length < 30 || sourceReadings.deuxieme.length < 30 || sourceReadings.evangile.length < 30) {
+      return res.status(422).json({
+        error: 'Le texte complet de la première lecture, de la deuxième lecture et de l’Évangile est nécessaire. Charge les lectures depuis l’AELF ou colle-les avec leurs titres.'
+      });
+    }
+    for (const [key, reference, label] of [
+      ['premiere', lecture1, 'première lecture'],
+      ['deuxieme', lecture2, 'deuxième lecture'],
+      ['evangile', evangile, 'Évangile']
+    ]) {
+      if (!sourceReadings.references[key] || normalizeReference(sourceReadings.references[key]) !== normalizeReference(reference)) {
+        return res.status(422).json({ error: `La référence de la ${label} ne correspond pas au texte fourni. Recharge les lectures depuis l’AELF.` });
+      }
     }
 
     const title = [
@@ -595,13 +690,10 @@ app.post('/api/generate', async (req, res) => {
 
     const style = await getStyleGuide();
     const corpus = await collectCorpus(CORPUS_DIR);
-    const history = await getPreviousGenerations();
 
     const corpusText = corpus.map(item =>
       `EXEMPLE : ${item.name}\n${item.content}`
     ).join('\n\n---\n\n').slice(0, 18000);
-
-    const previousText = history.join('\n\n---\n\n').slice(0, 8000);
 
     const systemInstruction = `
 Tu es un assistant de rédaction liturgique catholique francophone.
@@ -615,12 +707,14 @@ ${style || 'Français naturel, sobre, pastoral et facile à proclamer oralement.
 
 RÈGLES :
 - Les exemples locaux servent uniquement de références de style.
-- N'invente aucune référence biblique.
-- Respecte les références fournies par l'utilisateur.
-- Ne prétends pas avoir vérifié une source si tu ne l'as pas consultée.
-- Varie les constructions syntaxiques sans sacrifier la fidélité aux lectures.
-- Chaque introduction doit être une seule phrase.
-- Chaque intention doit être adressée explicitement à Dieu.
+- Travaille uniquement à partir des textes bibliques fournis ci-dessous ; ne complète jamais un passage absent par tes connaissances générales.
+- N'invente ni événement, ni personnage, ni citation biblique, ni interprétation présentée comme un fait.
+- Pour chaque introduction, exprime en une phrase le message spirituel central du passage correspondant, sans raconter toute la scène et sans faire une homélie.
+- Ne rédige aucune référence biblique : elles seront ajoutées depuis les références du formulaire.
+- Chaque intention s'adresse à Dieu par une demande priante, concrète et facile à proclamer.
+- La quatrième intention doit reprendre un motif ou une image clairement présente dans les textes fournis.
+- Évite les formulations interchangeables, les répétitions et les souhaits abstraits.
+- Vise 25 à 55 mots par intention, sans dépasser 85 mots.
 - Les quatre intentions doivent suivre cet ordre :
   1. L'Église : Pape, évêques, prêtres et mission de l'Église.
   2. Les dirigeants : justice, paix et bien commun.
@@ -648,7 +742,16 @@ ${lecture2}
 ${evangile || 'Référence non fournie'}
 
 TEXTES BIBLIQUES FOURNIS :
-${textes || 'Aucun texte intégral fourni.'}
+PREMIÈRE LECTURE — ${lecture1}
+${sourceReadings.premiere}
+
+PSAUME — ${sourceReadings.psaume || 'non fourni'}
+
+DEUXIÈME LECTURE — ${lecture2}
+${sourceReadings.deuxieme}
+
+ÉVANGILE — ${evangile}
+${sourceReadings.evangile}
 
 CONSIGNES LOCALES :
 ${consignes || 'Aucune.'}
@@ -659,16 +762,13 @@ ${ton}
 EXEMPLES LOCAUX :
 ${corpusText || 'Aucun exemple disponible.'}
 
-TRAVAUX ANTÉRIEURS À NE PAS COPIER :
-${previousText || 'Aucun travail antérieur disponible.'}
-
 PRODUIS EXACTEMENT CE FORMAT :
 
 ## Introductions aux lectures
 
-**Première lecture** : Une seule phrase présentant le message central de la première lecture, suivie de sa référence biblique exacte entre parenthèses.
+**Première lecture** : Une seule phrase présentant le message central de la première lecture. N’ajoute pas de référence.
 
-**Deuxième lecture** : Une seule phrase présentant le message central de la deuxième lecture, suivie de sa référence biblique exacte entre parenthèses.
+**Deuxième lecture** : Une seule phrase présentant le message central de la deuxième lecture. N’ajoute pas de référence.
 
 ## Prière universelle
 
@@ -683,45 +783,29 @@ PRODUIS EXACTEMENT CE FORMAT :
 N'ajoute aucun commentaire avant ou après ce contenu.
 `.trim();
 
-    const result = await generateWithFallback(prompt, systemInstruction, localDraft({ celebration, premiereLecture: lecture1, deuxiemeLecture: lecture2, evangile, ton }), personalKey);
-    const generated = cleanText(result.text);
-
-    if (!generated) {
-      return res.status(502).json({
-        error: 'Gemini n’a renvoyé aucun texte. Réessaie.'
-      });
+    let result;
+    let generated = '';
+    let introductions = [];
+    let intentions = [];
+    let errors = [];
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const attemptPrompt = attempt === 0
+        ? prompt
+        : `${prompt}\n\nCORRECTION REQUISE : la réponse précédente n'a pas passé le contrôle suivant : ${errors.join(' ')}. Corrige ces défauts, sans ajouter de commentaire.`;
+      result = await generateWithFallback(attemptPrompt, systemInstruction, personalKey);
+      generated = cleanText(result.text);
+      introductions = extractIntroductions(generated).map(normalizeIntroduction).filter(Boolean);
+      intentions = extractIntentions(generated).map(normalizeIntention).filter(Boolean);
+      errors = qualityErrors(introductions, intentions, [lecture1, lecture2], textes);
+      if (!errors.length) break;
+    }
+    if (errors.length) {
+      return res.status(502).json({ error: `Le texte généré n’a pas passé le contrôle de qualité après deux tentatives : ${errors.join(' ')}` });
     }
 
-    let introductions = extractIntroductions(generated)
-      .map(normalizeIntroduction)
-      .filter(Boolean);
-
-    let intentions = extractIntentions(generated)
-      .map(normalizeIntention)
-      .filter(Boolean);
-
-    if (introductions.length !== 2 || intentions.length !== 4) {
-      console.error(
-        'Structure Gemini invalide :',
-        introductions.length,
-        'introductions ;',
-        intentions.length,
-        'intentions.'
-      );
-
-      // Un format fournisseur défectueux ne doit pas rendre l'application inutilisable.
-      const local = cleanText(localDraft({ celebration, premiereLecture: lecture1, deuxiemeLecture: lecture2, evangile, ton }));
-      introductions = extractIntroductions(local).map(normalizeIntroduction).filter(Boolean);
-      intentions = extractIntentions(local).map(normalizeIntention).filter(Boolean);
-    }
-
-    intentions = intentions.map(intention => {
-      if (!/Seigneur,\s*nous te prions\.?$/i.test(intention)) {
-        return intention.replace(/\s*$/, '') +
-          '\nSeigneur, nous te prions.';
-      }
-
-      return intention;
+    introductions = introductions.map((intro, index) => {
+      const withoutReference = intro.replace(/\s*\([^)]*\)\s*$/, '').replace(/[.!?]+$/, '');
+      return `${withoutReference}. (${index === 0 ? lecture1 : lecture2})`;
     });
 
     const buffer = await createDocx(title, introductions, intentions);
@@ -739,7 +823,8 @@ N'ajoute aucun commentaire avant ou après ce contenu.
         lecture2,
         evangile,
         text: generated,
-        source: result.provider
+        source: result.provider,
+        model: result.model
       };
 
       await fs.appendFile(
@@ -756,9 +841,11 @@ N'ajoute aucun commentaire avant ou après ce contenu.
       intentions,
       qualityReport: {
         message:
-          `Structure vérifiée : deux introductions et quatre intentions. Source : ${result.provider}${result.degraded ? ' (mode local hors API)' : ''}. ` +
-          'La justesse biblique et théologique doit être relue.'
+          `Contrôles automatiques réussis : structure, longueur, ordre, formule finale et thèmes des textes. Fournisseur : ${result.provider} (${result.model}). ` +
+          'Relire le sens biblique et la formulation avant proclamation.'
       },
+      provider: result.provider,
+      model: result.model,
       document: {
         filename,
         mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -768,7 +855,7 @@ N'ajoute aucun commentaire avant ou après ce contenu.
   } catch (error) {
     console.error('Erreur serveur :', extractErrorMessage(error));
 
-    return res.status(400).json({
+    return res.status(Number(error?.status) || 400).json({
       error: extractErrorMessage(error)
     });
   }

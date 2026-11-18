@@ -296,8 +296,9 @@
               </div>
             </div>
             <div class="field field--wide">
-              <label for="textesBibliques">Textes bibliques ou extraits <span class="optional">facultatif</span></label>
-              <textarea id="textesBibliques" name="textesBibliques" rows="6" maxlength="20000" placeholder="Collez ici les textes complets ou des extraits, si vous le souhaitez."></textarea>
+              <label for="textesBibliques">Textes bibliques complets <span class="optional">requis pour une génération fidèle</span></label>
+              <textarea id="textesBibliques" name="textesBibliques" rows="6" maxlength="24000" placeholder="Chargez les lectures depuis l’AELF ci-dessous. Si vous les collez, séparez-les sous les titres Première lecture, Psaume, Deuxième lecture et Évangile."></textarea>
+              <p class="field__help">La génération s’appuie sur ces passages complets. Sans eux, le système s’arrête au lieu de compléter les lectures de mémoire.</p>
             </div>
             <div class="aelf-readings-panel">
               <div class="aelf-readings-panel__head"><div><h4>Lectures du jour · AELF</h4><p id="aelfCelebrationMeta">Chargez le calendrier pour consulter les lectures.</p></div><button type="button" class="btn btn--outline" id="loadAelfBtn">Charger depuis l’AELF</button></div>
