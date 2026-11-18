@@ -391,6 +391,26 @@
     if (summary) summary.firstChild.textContent = signedIn ? 'Travaux du groupe ' : 'Mes travaux enregistrés ';
     $('heroWorkCount').textContent = $('savedWorkCount').textContent;
   }
+  function restoreSupabaseSessionFromRedirect() {
+    const params = new URLSearchParams(window.location.hash.slice(1));
+    const accessToken = params.get('access_token');
+    const refreshToken = params.get('refresh_token');
+    const authError = params.get('error_description') || params.get('error');
+    if (!accessToken && !authError) return;
+    try {
+      if (accessToken) {
+        sessionStorage.setItem(AUTH_TOKEN_KEY, accessToken);
+        if (refreshToken) sessionStorage.setItem(AUTH_REFRESH_KEY, refreshToken);
+        updateAuthControls();
+        toast('Adresse confirmée. Chargement de la bibliothèque…', 'success');
+      } else {
+        toast(`Confirmation du compte impossible : ${authError}`, 'error', 7000);
+      }
+      window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
+    } catch {
+      toast('Impossible de terminer la connexion dans cet onglet. Réessayez depuis le formulaire.', 'error', 7000);
+    }
+  }
   async function cloudRequest(route, options = {}) {
     if (!authToken()) throw new Error('Connectez-vous pour synchroniser les travaux.');
     const request = (token) => fetch(route, {
@@ -426,22 +446,42 @@
       const { works = [] } = await cloudRequest('/api/works');
       const combined = new Map();
       works.forEach((work) => { if (validWork(work)) combined.set(work.id, work); });
+      const localToSync = [];
       readLibrary().forEach((work) => {
         if (!validWork(work)) return;
         const current = combined.get(work.id);
-        if (!current || Date.parse(work.updatedAt || '') > Date.parse(current.updatedAt || '')) combined.set(work.id, work);
+        const localTime = Date.parse(work.updatedAt || '') || 0;
+        const cloudTime = Date.parse(current?.updatedAt || '') || 0;
+        if (!current || localTime > cloudTime) {
+          combined.set(work.id, work);
+          localToSync.push(work);
+        }
       });
       writeLibrary([...combined.values()]);
       renderSavedWorks();
-      toast(`${works.length} travail(aux) récupéré(s) depuis la bibliothèque partagée.`, 'success');
+      let synced = 0;
+      let failed = 0;
+      for (const work of localToSync) {
+        if (await syncCloudWork(work, true)) synced += 1;
+        else failed += 1;
+      }
+      if (failed) {
+        toast(`${works.length} travail(aux) récupéré(s), ${synced} envoyé(s). ${failed} copie(s) locale(s) n’ont pas pu être synchronisée(s).`, 'error', 7000);
+      } else {
+        toast(`${works.length} travail(aux) récupéré(s), ${synced} copie(s) locale(s) synchronisée(s).`, 'success');
+      }
     } catch (error) { toast(error.message, 'error', 6000); }
   }
-  async function syncCloudWork(work) {
+  async function syncCloudWork(work, quiet = false) {
     if (!authToken()) return;
     try {
       await cloudRequest('/api/works', { method: 'POST', body: JSON.stringify({ work }) });
-      toast('Travail enregistré dans la bibliothèque partagée.', 'success');
-    } catch (error) { toast(`Copie locale conservée ; synchronisation en ligne impossible : ${error.message}`, 'error', 6500); }
+      if (!quiet) toast('Travail enregistré dans la bibliothèque partagée.', 'success');
+      return true;
+    } catch (error) {
+      if (!quiet) toast(`Copie locale conservée ; synchronisation en ligne impossible : ${error.message}`, 'error', 6500);
+      return false;
+    }
   }
   $('authOpenBtn').addEventListener('click', () => {
     authMode = 'login';
@@ -501,6 +541,7 @@
     library.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
   });
   updateAuthControls();
+  restoreSupabaseSessionFromRedirect();
 
   /* ---------- Thème ---------- */
   const themeBtn = $('themeToggle');
@@ -1171,7 +1212,7 @@
     toast('Le plan de départ est prêt. Personnalisez-le avec les lectures du jour.', 'success');
   });
 
-  function saveWork(work, quiet = false) {
+  function saveWork(work, quiet = false, statusNode = null) {
     if (!validWork(work)) { toast('Le travail ne peut pas être enregistré dans ce format.', 'error'); return false; }
     const id = currentWorkId || work.id || String(Date.now());
     const item = Object.assign({}, work, { id, updatedAt: new Date().toISOString() });
@@ -1182,7 +1223,14 @@
     if (!writeLibrary(items)) return false;
     currentWorkId = id;
     renderSavedWorks();
-    if (authToken()) void syncCloudWork(item);
+    if (authToken()) {
+      if (statusNode) statusNode.textContent = 'Enregistrement en ligne…';
+      void syncCloudWork(item, Boolean(statusNode)).then((savedOnline) => {
+        if (statusNode) statusNode.textContent = savedOnline
+          ? 'Enregistré en ligne'
+          : 'Copie locale conservée ; enregistrement en ligne impossible.';
+      });
+    }
     else if (!quiet) toast('Travail enregistré sur cet appareil.', 'success');
     return true;
   }
@@ -1315,7 +1363,8 @@
     renderResults(state.result); showView('results');
   });
   $('saveFreeDraft').addEventListener('click', () => {
-    if (saveWork(currentFreeWork())) $('freeSaveStatus').textContent = authToken() ? 'Enregistré en ligne' : 'Enregistré dans ce navigateur';
+    const work = currentFreeWork();
+    if (saveWork(work, false, $('freeSaveStatus')) && !authToken()) $('freeSaveStatus').textContent = 'Enregistré dans ce navigateur';
   });
   $('freeExportBtn').addEventListener('click', () => {
     state.result = currentFreeWork();

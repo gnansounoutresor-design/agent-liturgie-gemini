@@ -21,7 +21,7 @@ Les clés IA restent sur le serveur et les visiteurs n'ont pas à en saisir. Une
 3. Dans Supabase Auth → URL Configuration, ajoutez les URL de l'application locale et de production à la liste des redirections permises.
 4. Activez la confirmation d'adresse e-mail dans Supabase Auth, puis utilisez **Se connecter** pour créer un compte ou ouvrir une session.
 
-Les travaux partagés sont accessibles aux comptes authentifiés du même projet Supabase, comme sur l'espace de référence. Les brouillons du navigateur sont conservés en parallèle pour permettre le mode local.
+Les travaux partagés sont accessibles aux comptes authentifiés du même projet Supabase, comme sur l'espace de référence. Les brouillons du navigateur sont conservés en parallèle pour permettre le mode local ; après connexion, les copies locales absentes ou plus récentes sont synchronisées vers la bibliothèque partagée. Le site récupère aussi la session renvoyée par le lien de confirmation e-mail lorsque Supabase redirige vers l'application.
 
 ## Déployer sur Vercel
 
