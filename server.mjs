@@ -313,6 +313,14 @@ function extractErrorMessage(error, provider = '') {
   const message = String(error?.message || 'Erreur inconnue');
   const service = provider || 'le fournisseur IA';
 
+  if (/HTTP 402|insufficient balance|insufficient credit|payment required/i.test(message)) {
+    return `Le solde du compte ${service} est insuffisant. Ajoute du crédit ou configure un autre fournisseur IA.`;
+  }
+
+  if (/DEADLINE_EXCEEDED|deadline expired|HTTP 504|\b504\b|timed? ?out/i.test(message)) {
+    return `${service} n’a pas répondu avant la fin du délai. Réessaie dans quelques instants.`;
+  }
+
   if (/API_KEY_INVALID|invalid api key|API key not valid|HTTP 401/i.test(message)) {
     return `La clé API de ${service} est invalide. Vérifie sa configuration.`;
   }
