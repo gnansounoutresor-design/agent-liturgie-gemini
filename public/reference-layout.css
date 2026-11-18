@@ -132,6 +132,16 @@ body { background: var(--bg); font-size: 17px; }
 .page-auth .auth-dialog::backdrop { background: rgba(39,31,26,.48); backdrop-filter: blur(3px); }
 .page-auth .auth-dialog__form { padding: 32px; }
 
+/* Notice juridique accessible sur une page dédiée depuis toutes les routes. */
+.page-privacy .site-header { display: block !important; }
+.page-privacy .nav { display: none !important; }
+.page-privacy main > section:not(#confidentialite):not(#conditions-utilisation) { display: none !important; }
+.page-privacy #confidentialite,
+.page-privacy #conditions-utilisation,
+.page-privacy .site-footer { display: block !important; }
+.page-privacy #confidentialite,
+.page-privacy #conditions-utilisation { width: min(100% - 40px, 960px); margin-inline: auto; padding-block: 36px; }
+
 @keyframes section-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 @media (max-width: 900px) {
   .page-redaction .free-writing__layout { grid-template-columns: 180px minmax(0,1fr); }

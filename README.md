@@ -16,19 +16,19 @@ Les clés IA restent sur le serveur et les visiteurs n'ont pas à en saisir. Une
 
 ### Activer les comptes et la bibliothèque partagée
 
-1. Créez un projet Supabase et exécutez [`supabase/schema.sql`](supabase/schema.sql) dans son SQL Editor.
-2. Ajoutez `SUPABASE_URL` et `SUPABASE_ANON_KEY` dans `.env` localement et dans les variables Vercel. N'utilisez pas la clé `service_role`.
-3. Dans Supabase Auth → URL Configuration, ajoutez les URL de l'application locale et de production à la liste des redirections permises.
-4. Activez la confirmation d'adresse e-mail dans Supabase Auth, puis utilisez **Se connecter** pour créer un compte ou ouvrir une session.
+1. Dans Supabase, active **Allow new users to sign up** et **Confirm email**. Configure un serveur SMTP personnalisé pour envoyer les confirmations aux adresses des utilisateurs : le service d’envoi par défaut Supabase est limité aux adresses autorisées de l’équipe et n’est pas prévu pour la production.
+2. Dans **Authentication → URL Configuration**, définis l’URL du site sur `https://priereuniversellebakhita.onrender.com/` et autorise cette URL ainsi que `http://localhost:3000/` pour le développement. Configure le modèle de confirmation pour renvoyer vers `{{ .RedirectTo }}` ou `{{ .SiteURL }}`.
+3. Exécute [`supabase/schema.sql`](supabase/schema.sql) dans le SQL Editor Supabase. Le script crée le profil par compte, les règles Row Level Security et le propriétaire des travaux. Il est réexécutable : les anciens travaux sans propriétaire restent consultables par le groupe, mais ne peuvent pas être modifiés ou supprimés par un compte arbitraire.
+4. Dans **Render → Environment**, configure `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_AUTH_REDIRECT_URL=https://priereuniversellebakhita.onrender.com/` et, pour activer la suppression autonome des comptes, `SUPABASE_SERVICE_ROLE_KEY`. La clé `service_role` est un secret serveur : ne la publie jamais dans Git, dans une page ou dans une variable `VITE_`/`PUBLIC_`.
+5. N’active pas le CAPTCHA Supabase tant qu’un CAPTCHA n’est pas intégré à l’écran d’inscription : ce formulaire ne transmet actuellement aucun jeton CAPTCHA. Une protection CAPTCHA doit être ajoutée avec son fournisseur et ses clés avant d’être activée côté Supabase. `cloudSyncConfigured` confirme uniquement la présence de l’URL et de la clé publique ; il ne valide pas le schéma ni le SMTP. `accountDeletionAvailable` indique si la clé secrète de suppression est présente.
 
-Les travaux partagés sont accessibles aux comptes authentifiés du même projet Supabase, comme sur l'espace de référence. Les brouillons du navigateur sont conservés en parallèle pour permettre le mode local ; après connexion, les copies locales absentes ou plus récentes sont synchronisées vers la bibliothèque partagée. Le site récupère aussi la session renvoyée par le lien de confirmation e-mail lorsque Supabase redirige vers l'application.
+Les profils ne sont lisibles que par leur propriétaire. Les travaux nouvellement sauvegardés restent partagés avec les comptes authentifiés du groupe, mais les modifications et suppressions sont limitées à leur propriétaire. À la connexion, les brouillons locaux absents ou plus récents sont synchronisés. La suppression d’un compte efface son profil et les travaux en ligne qu’il possède ; les copies locales et les liens de partage déjà distribués doivent être effacés séparément.
 
-## Déployer sur Vercel
+Le formulaire propose également une réinitialisation du mot de passe par e-mail. Le lien de récupération doit être autorisé dans **Authentication → URL Configuration**, et le modèle de récupération Supabase doit utiliser `{{ .RedirectTo }}` ou `{{ .SiteURL }}` pour revenir sur le site.
 
-1. Importez le dépôt GitHub `gnansounoutresor-design/agent-liturgie-gemini` dans Vercel.
-2. Ajoutez les variables disponibles dans **Settings → Environment Variables** : `SUPABASE_URL` et `SUPABASE_ANON_KEY` pour les comptes et la bibliothèque partagée, puis au moins une clé parmi `GEMINI_API_KEY`, `DEEPSEEK_API_KEY` et `OPENAI_API_KEY`. Gardez les clés d'IA côté serveur ; ne les mettez jamais dans le code ou dans GitHub.
-3. Déployez le projet. Vercel détecte l'application Express depuis `server.mjs`; `vercel.json` inclut le corpus et les fichiers du site et autorise jusqu'à 120 secondes pour une génération.
-4. Vérifiez `/api/health` sur le domaine de production : `providers` indique les fournisseurs et modèles configurés, et `localFallback` est `false`.
+## Déploiement
+
+Le dépôt est relié à Render pour le site public. Les corrections poussées sur `main` déclenchent le déploiement automatique. Les paramètres d’authentification ci-dessus doivent être appliqués séparément dans Supabase et Render ; l’application ne peut pas les modifier avec la clé publique.
 
 L'application essaie les fournisseurs configurés dans l'ordre. La récupération AELF nécessite toujours une connexion ; les lectures affichées ne peuvent être rafraîchies sans accès à ce service. Les dates passées sont acceptées pour permettre la préparation et la vérification d'anciens dimanches. La génération exige le texte des lectures et s'arrête si ces sources manquent. Relire les références bibliques et les textes générés reste nécessaire.
 

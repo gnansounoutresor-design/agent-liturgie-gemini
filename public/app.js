@@ -32,7 +32,7 @@
   'use strict';
 
   const pagePath = window.location.pathname.replace(/\/+$/, '') || '/';
-  const pageName = pagePath === '/atelier' ? 'atelier' : pagePath === '/redaction' ? 'redaction' : pagePath === '/auth' ? 'auth' : 'home';
+  const pageName = pagePath === '/atelier' ? 'atelier' : pagePath === '/redaction' ? 'redaction' : pagePath === '/auth' ? 'auth' : pagePath === '/confidentialite' ? 'privacy' : 'home';
   document.body.classList.add(`page-${pageName}`);
 
   /* ---------- Configuration ---------- */
@@ -307,6 +307,7 @@
   let serverKeyConfigured = false;
   let serverStatusChecked = false;
   let cloudSyncConfigured = false;
+  let accountDeletionAvailable = false;
   let authMode = 'login';
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -340,6 +341,8 @@
     .then((data) => {
       serverKeyConfigured = Boolean(data && (data.geminiConfigured || (data.providers && data.providers.length)));
       cloudSyncConfigured = Boolean(data && data.cloudSyncConfigured);
+      accountDeletionAvailable = Boolean(data && data.accountDeletionAvailable);
+      $('profileDeletionHelp').hidden = accountDeletionAvailable;
       if (cloudSyncConfigured && authToken()) loadCloudWorks();
       serverStatusChecked = true;
       const status = $('serviceStatusText');
@@ -374,6 +377,7 @@
   /* ---------- Connexion facultative et bibliothèque partagée ---------- */
   const AUTH_TOKEN_KEY = 'sjc-liturgie-session-v1';
   const AUTH_REFRESH_KEY = 'sjc-liturgie-refresh-v1';
+  const TERMS_VERSION = '2026-11-18';
   const authDialog = $('authDialog');
   const authToken = () => sessionStorage.getItem(AUTH_TOKEN_KEY) || '';
   function showAuthMessage(message, isError = false) {
@@ -384,6 +388,7 @@
   function updateAuthControls() {
     const signedIn = Boolean(authToken());
     $('authOpenBtn').hidden = signedIn;
+    $('profileOpenBtn').hidden = !signedIn;
     $('authLogoutBtn').hidden = !signedIn;
     $('heroSignInBtn').hidden = signedIn;
     $('heroLogoutBtn').hidden = !signedIn;
@@ -391,10 +396,43 @@
     if (summary) summary.firstChild.textContent = signedIn ? 'Travaux du groupe ' : 'Mes travaux enregistrés ';
     $('heroWorkCount').textContent = $('savedWorkCount').textContent;
   }
+  function showCredentials() {
+    $('authCredentials').hidden = false;
+    $('profilePanel').hidden = true;
+    $('authEmail').disabled = false;
+    $('authEmail').required = true;
+    $('authEmail').closest('.field').hidden = false;
+    $('authPassword').disabled = false;
+    authMode = 'login';
+    $('authTitle').textContent = 'Se connecter';
+    $('authSubmitBtn').textContent = 'Se connecter';
+    $('authModeToggle').textContent = 'Créer un compte';
+    $('authModeToggle').hidden = false;
+    $('forgotPasswordBtn').hidden = false;
+    $('authDisplayName').closest('.field').hidden = true;
+    $('signupTermsField').hidden = true;
+    $('termsAccepted').required = false;
+    $('authPassword').autocomplete = 'current-password';
+    showAuthMessage('');
+  }
+  async function loadProfile() {
+    $('profileStatus').classList.remove('is-error');
+    $('profileStatus').textContent = 'Chargement du profil…';
+    try {
+      const { profile } = await cloudRequest('/api/profile');
+      $('profileEmail').textContent = profile?.email || '';
+      $('profileDisplayName').value = profile?.displayName || '';
+      $('profileStatus').textContent = '';
+    } catch (error) {
+      $('profileStatus').textContent = error.message;
+      $('profileStatus').classList.add('is-error');
+    }
+  }
   function restoreSupabaseSessionFromRedirect() {
     const params = new URLSearchParams(window.location.hash.slice(1));
     const accessToken = params.get('access_token');
     const refreshToken = params.get('refresh_token');
+    const recovery = params.get('type') === 'recovery';
     const authError = params.get('error_description') || params.get('error');
     if (!accessToken && !authError) return;
     try {
@@ -402,7 +440,26 @@
         sessionStorage.setItem(AUTH_TOKEN_KEY, accessToken);
         if (refreshToken) sessionStorage.setItem(AUTH_REFRESH_KEY, refreshToken);
         updateAuthControls();
-        toast('Adresse confirmée. Chargement de la bibliothèque…', 'success');
+        if (recovery) {
+          authMode = 'password';
+          $('authCredentials').hidden = false;
+          $('profilePanel').hidden = true;
+          $('authEmail').closest('.field').hidden = true;
+          $('authEmail').required = false;
+          $('authPassword').disabled = false;
+          $('authPassword').value = '';
+          $('authPassword').autocomplete = 'new-password';
+          $('authTitle').textContent = 'Choisir un nouveau mot de passe';
+          $('authDescription').textContent = 'Saisis un nouveau mot de passe d’au moins huit caractères.';
+          $('authSubmitBtn').textContent = 'Enregistrer le mot de passe';
+          $('authModeToggle').hidden = true;
+          $('forgotPasswordBtn').hidden = true;
+          $('signupTermsField').hidden = true;
+          authDialog.showModal();
+          showAuthMessage('Lien de réinitialisation validé. Choisis ton nouveau mot de passe.');
+        } else {
+          toast('Adresse confirmée. Chargement de la bibliothèque…', 'success');
+        }
       } else {
         toast(`Confirmation du compte impossible : ${authError}`, 'error', 7000);
       }
@@ -484,15 +541,23 @@
     }
   }
   $('authOpenBtn').addEventListener('click', () => {
-    authMode = 'login';
-    $('authTitle').textContent = 'Se connecter';
-    $('authSubmitBtn').textContent = 'Se connecter';
-    $('authModeToggle').textContent = 'Créer un compte';
+    showCredentials();
     $('authDescription').textContent = cloudSyncConfigured
       ? 'Connectez-vous pour retrouver et partager les travaux du groupe sur plusieurs appareils.'
       : 'La connexion en ligne sera disponible après configuration de Supabase ; la bibliothèque locale fonctionne déjà sans compte.';
     showAuthMessage(cloudSyncConfigured ? '' : 'Synchronisation en ligne non configurée. Consultez le README pour l’activer.');
     authDialog.showModal();
+  });
+  $('profileOpenBtn').addEventListener('click', () => {
+    $('authCredentials').hidden = true;
+    $('profilePanel').hidden = false;
+    $('authEmail').disabled = true;
+    $('authPassword').disabled = true;
+    $('authTitle').textContent = 'Mon profil';
+    $('authDescription').textContent = 'Consulte et mets à jour les informations associées à ton compte.';
+    $('profileDeletionHelp').hidden = accountDeletionAvailable;
+    authDialog.showModal();
+    loadProfile();
   });
   $('authCloseBtn').addEventListener('click', () => authDialog.close());
   $('authModeToggle').addEventListener('click', () => {
@@ -500,24 +565,73 @@
     $('authTitle').textContent = authMode === 'login' ? 'Se connecter' : 'Créer un compte';
     $('authSubmitBtn').textContent = authMode === 'login' ? 'Se connecter' : 'Créer mon compte';
     $('authModeToggle').textContent = authMode === 'login' ? 'Créer un compte' : 'J’ai déjà un compte';
+    $('forgotPasswordBtn').hidden = authMode !== 'login';
     $('authPassword').autocomplete = authMode === 'login' ? 'current-password' : 'new-password';
+    $('authEmail').closest('.field').hidden = false;
+    $('authDisplayName').closest('.field').hidden = authMode !== 'signup';
+    $('signupTermsField').hidden = authMode !== 'signup';
+    $('termsAccepted').required = authMode === 'signup';
+    $('termsAccepted').checked = false;
     showAuthMessage('');
+  });
+  $('forgotPasswordBtn').addEventListener('click', async () => {
+    const email = $('authEmail').value.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      showAuthMessage('Saisis ton adresse e-mail pour recevoir un lien de réinitialisation.', true);
+      $('authEmail').focus();
+      return;
+    }
+    const button = $('forgotPasswordBtn');
+    button.disabled = true;
+    try {
+      const response = await fetch('/api/auth/recover', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ email }), cache: 'no-store', signal: AbortSignal.timeout(15000)
+      });
+      const data = await readJsonSafely(response);
+      if (!response.ok) throw new Error(data?.error || 'Envoi du lien impossible.');
+      showAuthMessage('Si un compte correspond à cette adresse, un lien de réinitialisation va être envoyé.');
+    } catch (error) {
+      showAuthMessage(error.message || 'Envoi du lien impossible.', true);
+    } finally { button.disabled = false; }
   });
   $('authForm').addEventListener('submit', async (event) => {
     event.preventDefault();
     if (!cloudSyncConfigured) { showAuthMessage('La connexion en ligne n’est pas configurée. La bibliothèque locale reste disponible.'); return; }
     const submit = $('authSubmitBtn');
     submit.disabled = true;
-    showAuthMessage('Connexion en cours…');
+    showAuthMessage(authMode === 'password' ? 'Enregistrement du nouveau mot de passe…' : 'Connexion en cours…');
     try {
+      if (authMode === 'password') {
+        const response = await fetch('/api/auth/password', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${authToken()}` },
+          body: JSON.stringify({ password: $('authPassword').value }), cache: 'no-store', signal: AbortSignal.timeout(15000)
+        });
+        const data = await readJsonSafely(response);
+        if (!response.ok) throw new Error(data?.error || 'Mise à jour du mot de passe impossible.');
+        authMode = 'login';
+        $('authPassword').value = '';
+        $('authModeToggle').hidden = false;
+        $('authEmail').closest('.field').hidden = false;
+        $('authEmail').required = true;
+        authDialog.close();
+        toast('Mot de passe mis à jour.', 'success');
+        return;
+      }
       const response = await fetch(`/api/auth/${authMode}`, {
         method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({ email: $('authEmail').value, password: $('authPassword').value }),
+        body: JSON.stringify({
+          email: $('authEmail').value,
+          password: $('authPassword').value,
+          displayName: authMode === 'signup' ? $('authDisplayName').value : '',
+          termsAccepted: authMode === 'signup' && $('termsAccepted').checked,
+          termsVersion: authMode === 'signup' ? TERMS_VERSION : ''
+        }),
         credentials: 'same-origin', cache: 'no-store', signal: AbortSignal.timeout(15000)
       });
       const data = await readJsonSafely(response);
       if (!response.ok) throw new Error(data?.error || 'Connexion refusée.');
-      if (!data.accessToken) { showAuthMessage('Compte créé. Vérifiez votre boîte e-mail pour confirmer l’adresse, puis connectez-vous.'); return; }
+      if (!data.accessToken) { showAuthMessage('Compte créé. Ouvre le lien reçu par e-mail pour confirmer ton adresse. Le site ouvrira ensuite ta session.'); return; }
       sessionStorage.setItem(AUTH_TOKEN_KEY, data.accessToken);
       if (data.refreshToken) sessionStorage.setItem(AUTH_REFRESH_KEY, data.refreshToken);
       updateAuthControls();
@@ -527,6 +641,37 @@
       await loadCloudWorks();
     } catch (error) { showAuthMessage(error.message || 'Connexion impossible.', true); }
     finally { submit.disabled = false; }
+  });
+  $('saveProfileBtn').addEventListener('click', async () => {
+    const button = $('saveProfileBtn');
+    button.disabled = true;
+    $('profileStatus').classList.remove('is-error');
+    $('profileStatus').textContent = 'Enregistrement…';
+    try {
+      await cloudRequest('/api/profile', { method: 'PATCH', body: JSON.stringify({ displayName: $('profileDisplayName').value }) });
+      $('profileStatus').textContent = 'Profil enregistré.';
+    } catch (error) {
+      $('profileStatus').textContent = error.message;
+      $('profileStatus').classList.add('is-error');
+    } finally { button.disabled = false; }
+  });
+  $('deleteAccountBtn').addEventListener('click', async () => {
+    if (!window.confirm('Supprimer définitivement ton compte, ton profil et les travaux en ligne créés par ce compte ? Les copies locales resteront dans ce navigateur.')) return;
+    const button = $('deleteAccountBtn');
+    button.disabled = true;
+    $('profileStatus').classList.remove('is-error');
+    $('profileStatus').textContent = 'Suppression du compte…';
+    try {
+      await cloudRequest('/api/account', { method: 'DELETE' });
+      sessionStorage.removeItem(AUTH_TOKEN_KEY);
+      sessionStorage.removeItem(AUTH_REFRESH_KEY);
+      authDialog.close();
+      updateAuthControls();
+      toast('Compte et données en ligne supprimés. Les travaux conservés dans ce navigateur restent disponibles.', 'success', 7000);
+    } catch (error) {
+      $('profileStatus').textContent = error.message;
+      $('profileStatus').classList.add('is-error');
+    } finally { button.disabled = false; }
   });
   $('authLogoutBtn').addEventListener('click', () => {
     sessionStorage.removeItem(AUTH_TOKEN_KEY);
@@ -1414,6 +1559,17 @@
   } else if (pageName === 'atelier') {
     if (dateInput.value) loadAelfReadings(dateInput.value);
   } else if (pageName === 'auth') {
+    if (authToken()) {
+      $('authCredentials').hidden = true;
+      $('profilePanel').hidden = false;
+      $('authEmail').disabled = true;
+      $('authPassword').disabled = true;
+      $('authTitle').textContent = 'Mon profil';
+      $('authModeToggle').hidden = false;
+      loadProfile();
+    } else {
+      showCredentials();
+    }
     authDialog.showModal();
   }
 

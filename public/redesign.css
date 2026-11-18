@@ -5,7 +5,6 @@
    Nouvelle identité visuelle : ivoire, bordeaux et or
    ========================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600;700&family=Source+Serif+4:wght@400;500;600;700&display=swap');
 
 :root {
   --ivoire: #FAF6EC;
@@ -2192,6 +2191,14 @@ textarea[aria-invalid="true"] {
 .auth-dialog__close { position: absolute; top: 16px; right: 18px; width: 38px; height: 38px; border: 0; border-radius: 50%; background: var(--surface-2); color: var(--text); font-size: 1.5rem; }
 .auth-dialog__status { min-height: 1.5em; color: var(--text-muted); font-size: .92rem; }
 .auth-dialog__status.is-error { color: var(--danger, #a52839); }
+.signup-terms { display: flex; align-items: flex-start; gap: 10px; }
+.signup-terms input { width: auto; margin-top: 4px; }
+.signup-terms span { display: block; }
+.auth-legal-links { margin: 0; text-align: center; }
+#profilePanel { display: grid; gap: 14px; }
+#profilePanel h3, #profilePanel p { margin: 0; }
+#profilePanel .field { display: grid; gap: 6px; }
+#deleteAccountBtn { border-color: var(--red, #a3202f); color: var(--red, #a3202f); }
 @media (max-width: 700px) { .header-auth { padding: 8px 10px; font-size: .78rem; } }
 @media (max-width: 700px) {
   .hero--cathedral { min-height: 500px; text-align: center; }

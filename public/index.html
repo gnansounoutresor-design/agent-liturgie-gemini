@@ -7,9 +7,6 @@
   <meta name="description" content="L’atelier des lecteurs Saint Jean Chrysostome pour préparer les lectures de la messe, les introductions et la prière universelle.">
   <meta name="color-scheme" content="light dark">
   <meta name="referrer" content="no-referrer">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=EB+Garamond:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600;700&family=Source+Serif+4:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="redesign.css">
@@ -64,6 +61,7 @@
 
       <div class="site-header__actions">
         <button type="button" class="btn btn--outline header-auth" id="authOpenBtn">Se connecter</button>
+        <button type="button" class="btn btn--outline header-auth" id="profileOpenBtn" hidden>Mon profil</button>
         <button type="button" class="btn btn--ghost header-auth" id="authLogoutBtn" hidden>Se déconnecter</button>
         <button type="button" class="icon-btn" id="themeToggle" aria-label="Passer au thème sombre" aria-pressed="false">
           <svg class="icon icon--moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
@@ -83,11 +81,29 @@
       <p class="eyebrow">Bibliothèque partagée</p>
       <h2 id="authTitle">Se connecter</h2>
       <p class="field__help" id="authDescription">Connectez-vous pour retrouver et partager les travaux du groupe sur plusieurs appareils.</p>
-      <div class="field"><label for="authEmail">Adresse e-mail</label><input id="authEmail" type="email" autocomplete="email" required maxlength="254"></div>
-      <div class="field"><label for="authPassword">Mot de passe</label><input id="authPassword" type="password" autocomplete="current-password" required minlength="8" maxlength="200"></div>
-      <p class="auth-dialog__status" id="authStatus" role="status" aria-live="polite"></p>
-      <button class="btn btn--primary" id="authSubmitBtn" type="submit">Se connecter</button>
-      <button class="btn btn--ghost" id="authModeToggle" type="button">Créer un compte</button>
+      <div id="authCredentials">
+        <div class="field" id="signupDisplayNameField" hidden><label for="authDisplayName">Nom affiché (facultatif)</label><input id="authDisplayName" type="text" autocomplete="name" maxlength="80"></div>
+        <div class="field"><label for="authEmail">Adresse e-mail</label><input id="authEmail" type="email" autocomplete="email" required maxlength="254"></div>
+        <div class="field"><label for="authPassword">Mot de passe</label><input id="authPassword" type="password" autocomplete="current-password" required minlength="8" maxlength="200"></div>
+        <label class="field__help signup-terms" id="signupTermsField" hidden>
+          <input id="termsAccepted" type="checkbox">
+          <span>J’accepte les <a href="/confidentialite#conditions-utilisation" target="_blank" rel="noopener noreferrer">conditions d’utilisation</a> et j’ai pris connaissance de la <a href="/confidentialite#confidentialite" target="_blank" rel="noopener noreferrer">notice de confidentialité</a>.</span>
+        </label>
+        <p class="auth-dialog__status" id="authStatus" role="status" aria-live="polite"></p>
+        <button class="btn btn--primary" id="authSubmitBtn" type="submit">Se connecter</button>
+        <button class="btn btn--ghost" id="forgotPasswordBtn" type="button">Mot de passe oublié ?</button>
+        <button class="btn btn--ghost" id="authModeToggle" type="button">Créer un compte</button>
+        <p class="field__help auth-legal-links"><a href="/confidentialite#confidentialite" target="_blank" rel="noopener noreferrer">Notice de confidentialité</a> · <a href="/confidentialite#conditions-utilisation" target="_blank" rel="noopener noreferrer">Conditions d’utilisation</a></p>
+      </div>
+      <section id="profilePanel" hidden aria-labelledby="profileHeading">
+        <h3 id="profileHeading">Mon profil</h3>
+        <p class="field__help">Adresse e-mail : <strong id="profileEmail"></strong></p>
+        <div class="field"><label for="profileDisplayName">Nom affiché (facultatif)</label><input id="profileDisplayName" type="text" autocomplete="name" maxlength="80"></div>
+        <p class="auth-dialog__status" id="profileStatus" role="status" aria-live="polite"></p>
+        <button class="btn btn--primary" id="saveProfileBtn" type="button">Enregistrer mon profil</button>
+        <p class="field__help" id="profileDeletionHelp" hidden>La suppression autonome n’est pas activée. <a data-contact="whatsapp">Contacter le responsable du site pour demander l’effacement.</a></p>
+        <button class="btn btn--outline" id="deleteAccountBtn" type="button">Supprimer mon compte et mes travaux en ligne</button>
+      </section>
     </form>
   </dialog>
 
@@ -530,12 +546,38 @@
     <section class="section container privacy-section" id="confidentialite" aria-labelledby="privacyTitle">
       <div class="section__head">
         <p class="eyebrow">Données et confidentialité</p>
-        <h2 class="section__title" id="privacyTitle">Vos textes restent sous votre contrôle</h2>
+        <h2 class="section__title" id="privacyTitle">Notice de confidentialité</h2>
       </div>
       <div class="privacy-card card">
-        <p>Sans connexion, les brouillons sont conservés dans le navigateur ; exportez-les ou partagez un lien pour les transférer. Si la bibliothèque Supabase est activée et que vous êtes connecté, les travaux sont synchronisés en ligne et visibles par tous les comptes authentifiés du même projet.</p>
-        <p>Toute personne possédant un lien de partage peut consulter son contenu. La date choisie est envoyée à l’AELF pour récupérer les lectures. Pour la rédaction assistée, les textes et consignes nécessaires sont transmis au fournisseur d’IA configuré par le serveur ; les clés restent côté serveur.</p>
-        <p>Évitez d’inclure des renseignements personnels ou confidentiels dans les intentions. Relisez les textes générés avant leur utilisation pendant une célébration.</p>
+        <p><strong>Responsable du traitement :</strong> Groupe des lecteurs Saint Jean Chrysostome. Pour une demande concernant tes données, utilise le <a data-contact="whatsapp">contact WhatsApp du responsable</a>.</p>
+        <h3>Données et usages</h3>
+        <ul>
+          <li>Pour créer et sécuriser un compte : adresse e-mail, identifiant Supabase, confirmation de l’adresse, nom affiché facultatif et dates de création/modification du profil.</li>
+          <li>Pour la bibliothèque : travaux liturgiques, textes, titre, date et dates de sauvegarde. Les profils sont privés ; les travaux enregistrés dans la bibliothèque du groupe sont visibles par les comptes authentifiés.</li>
+          <li>Sans compte : les brouillons et préférences sont conservés dans le stockage local du navigateur. Les jetons de session sont conservés dans le stockage de session du navigateur.</li>
+          <li>Lors d’un partage par lien, le contenu est encodé dans le lien ; toute personne qui le reçoit peut le consulter.</li>
+        </ul>
+        <p><strong>Base légale :</strong> la gestion du compte, du profil et des travaux repose sur l’exécution du service demandé ; la prévention des abus et la sécurité du site reposent sur l’intérêt légitime de l’éditeur. Aucun profil n’est utilisé pour de la publicité. Les textes sont envoyés à l’IA uniquement lorsque tu demandes une génération ou une réécriture.</p>
+        <h3>Destinataires et transferts</h3>
+        <p>Supabase fournit l’authentification et la base de données ; Render héberge l’application ; l’AELF reçoit la date demandée pour récupérer le calendrier. Si tu demandes une rédaction assistée, les textes bibliques fournis et les consignes nécessaires sont transmis au fournisseur IA actif (Google Gemini, DeepSeek ou OpenAI). Ton adresse e-mail et ton profil ne sont pas inclus dans le prompt de génération. Selon la configuration des fournisseurs, certaines données peuvent être traitées hors de l’Espace économique européen, dans le cadre des garanties contractuelles de ces services.</p>
+        <h3>Durées et contrôle</h3>
+        <p>Le profil et les travaux en ligne sont conservés tant que le compte existe, sauf suppression préalable. La suppression du compte efface le profil et les travaux dont ce compte est propriétaire ; elle ne supprime pas les copies exportées, les liens déjà partagés ni les brouillons stockés dans ton navigateur. Les brouillons locaux restent jusqu’à leur effacement par l’utilisateur. La génération n’est plus archivée dans le serveur de l’application ; les traitements nécessaires à la requête restent soumis aux paramètres et durées du fournisseur choisi.</p>
+        <p>Tu peux demander l’accès, la rectification, l’effacement, la limitation ou la portabilité de tes données, et t’opposer aux traitements lorsque ce droit s’applique. Tu peux également déposer une réclamation auprès de la <a href="https://www.cnil.fr/fr/plaintes" target="_blank" rel="noopener noreferrer">CNIL</a>. Les demandes peuvent être adressées au contact indiqué ci-dessus.</p>
+        <h3>Stockage et sécurité</h3>
+        <p>Le site n’utilise pas de traceur publicitaire ni d’outil d’audience. Il utilise le stockage du navigateur pour les travaux locaux, les préférences et la session. Les mots de passe ne sont pas enregistrés dans l’application : ils sont gérés par Supabase Auth. N’inscris pas de données personnelles ou confidentielles dans les intentions ou consignes ; relis toujours les textes générés.</p>
+      </div>
+    </section>
+
+    <section class="section container" id="conditions-utilisation" aria-labelledby="termsTitle">
+      <div class="section__head">
+        <p class="eyebrow">Utilisation du service</p>
+        <h2 class="section__title" id="termsTitle">Conditions d’utilisation</h2>
+      </div>
+      <div class="privacy-card card">
+        <p>L’atelier aide à préparer des textes liturgiques. Il peut produire des erreurs, omissions ou formulations inadaptées. L’utilisateur vérifie les références et relit, corrige et fait valider les textes avant leur proclamation.</p>
+        <p>Les comptes sont personnels. L’utilisateur est responsable des textes qu’il saisit, importe, sauvegarde ou partage, et doit disposer des droits nécessaires sur les contenus transmis. Les travaux enregistrés dans la bibliothèque du groupe sont consultables par les autres comptes authentifiés ; les liens de partage peuvent être ouverts par toute personne qui les reçoit.</p>
+        <p>Le service peut être interrompu pour maintenance, sécurité ou indisponibilité de ses fournisseurs. Les exports locaux et les sauvegardes personnelles restent sous le contrôle de l’utilisateur.</p>
+        <p><strong>Version :</strong> 18 novembre 2026. Toute nouvelle version des conditions sera présentée avant acceptation lors d’une nouvelle inscription.</p>
       </div>
     </section>
 
@@ -611,7 +653,7 @@
       <div class="site-footer__inner">
         <span>© <span id="year"></span> Assistant liturgique</span>
         <span>Relisez toujours les textes avant usage liturgique.</span>
-        <a href="#confidentialite">Confidentialité et utilisation</a>
+        <a href="/confidentialite#confidentialite">Confidentialité et conditions d’utilisation</a>
       </div>
     </div>
   </footer>

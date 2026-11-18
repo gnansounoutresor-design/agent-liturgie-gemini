@@ -20,17 +20,31 @@ import {
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(ROOT, 'public');
 const CORPUS_DIR = path.join(ROOT, 'corpus');
-const HISTORY_DIR = path.join(ROOT, 'historique');
 
 const MODEL = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
 const DEEPSEEK_MODEL = process.env.DEEPSEEK_MODEL || 'deepseek-chat';
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 const PORT = Number(process.env.PORT) || 3000;
+const TERMS_VERSION = '2026-11-18';
 
 const app = express();
 
 app.disable('x-powered-by');
 app.use(express.json({ limit: '1mb' }));
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+  res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
+  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'");
+  if (req.get('x-forwarded-proto') === 'https' || req.secure) {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000');
+  }
+  if (req.path.startsWith('/api/')) res.setHeader('Cache-Control', 'no-store');
+  next();
+});
 app.use(express.static(PUBLIC_DIR));
 
 
@@ -134,24 +148,6 @@ async function getStyleGuide() {
   );
 }
 
-async function getPreviousGenerations() {
-  const file = path.join(HISTORY_DIR, 'generations.jsonl');
-  const raw = await readTextFile(file);
-
-  return raw
-    .split(/\r?\n/)
-    .filter(Boolean)
-    .slice(-5)
-    .map(line => {
-      try {
-        const entry = JSON.parse(line);
-        return String(entry.text || '').slice(0, 2500);
-      } catch {
-        return '';
-      }
-    })
-    .filter(Boolean);
-}
 
 function extractIntroductions(text) {
   const section = text.match(
@@ -440,8 +436,26 @@ function qualityErrors(introductions, intentions, references, readingTexts) {
 function supabaseConfig() {
   return {
     url: String(process.env.SUPABASE_URL || '').replace(/\/$/, ''),
-    anonKey: String(process.env.SUPABASE_ANON_KEY || '')
+    anonKey: String(process.env.SUPABASE_ANON_KEY || ''),
+    serviceRoleKey: String(process.env.SUPABASE_SERVICE_ROLE_KEY || '')
   };
+}
+
+function getAuthRedirectTo(req) {
+  const configured = String(process.env.SUPABASE_AUTH_REDIRECT_URL || '').trim();
+  const originHeader = String(req.get('origin') || '').trim();
+  const candidate = configured || (originHeader ? `${originHeader}/` : '');
+  if (!candidate) return '';
+  try {
+    const target = new URL(candidate);
+    const sameOrigin = originHeader && target.origin === new URL(originHeader).origin;
+    const localHttp = ['localhost', '127.0.0.1'].includes(target.hostname) && target.protocol === 'http:';
+    if (target.protocol !== 'https:' && !localHttp) return '';
+    if (!configured && !sameOrigin) return '';
+    return target.toString();
+  } catch {
+    return '';
+  }
 }
 
 async function supabaseFetch(url, anonKey, pathname, { method = 'GET', token = '', body } = {}) {
@@ -467,6 +481,9 @@ async function authenticatedSupabaseUser(req) {
   const token = String(req.get('Authorization') || '').replace(/^Bearer\s+/i, '').trim();
   if (!token || token.length > 6000) throw Object.assign(new Error('Connectez-vous pour accéder aux travaux en ligne.'), { status: 401 });
   const user = await supabaseFetch(url, anonKey, '/auth/v1/user', { token });
+  if (!user?.email_confirmed_at && !user?.confirmed_at) {
+    throw Object.assign(new Error('Confirme ton adresse e-mail avant d’accéder au profil et à la bibliothèque.'), { status: 403 });
+  }
   return { url, anonKey, token, user };
 }
 
@@ -513,10 +530,17 @@ app.get('/api/liturgy', async (req, res) => {
 
 app.post('/api/auth/:action', async (req, res) => {
   const action = String(req.params.action || '');
-  if (!['login', 'signup', 'refresh'].includes(action)) return res.status(404).json({ error: 'Action de connexion inconnue.' });
+  if (!['login', 'signup', 'refresh', 'recover', 'password'].includes(action)) return res.status(404).json({ error: 'Action de connexion inconnue.' });
   try {
     const { url, anonKey } = supabaseConfig();
     if (!url || !anonKey) return res.status(503).json({ error: 'La connexion en ligne n’est pas encore configurée.' });
+    if (action === 'password') {
+      const { token } = await authenticatedSupabaseUser(req);
+      const newPassword = getField(req.body, 'password', 200);
+      if (newPassword.length < 8) return res.status(400).json({ error: 'Le mot de passe doit contenir au moins huit caractères.' });
+      await supabaseFetch(url, anonKey, '/auth/v1/user', { method: 'PUT', token, body: { password: newPassword } });
+      return res.json({ ok: true });
+    }
     if (action === 'refresh') {
       const refreshToken = getField(req.body, 'refreshToken', 6000);
       if (!refreshToken) return res.status(400).json({ error: 'Session expirée : reconnectez-vous.' });
@@ -524,12 +548,30 @@ app.post('/api/auth/:action', async (req, res) => {
       return res.json({ accessToken: refreshed.access_token || '', refreshToken: refreshed.refresh_token || '', user: refreshed.user || null });
     }
     const email = getField(req.body, 'email', 254).toLowerCase();
+    if (action === 'recover') {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'Saisissez une adresse e-mail valide.' });
+      const redirectTo = getAuthRedirectTo(req);
+      const endpoint = `/auth/v1/recover${redirectTo ? `?redirect_to=${encodeURIComponent(redirectTo)}` : ''}`;
+      await supabaseFetch(url, anonKey, endpoint, { method: 'POST', body: { email } });
+      return res.json({ ok: true });
+    }
     const password = getField(req.body, 'password', 200);
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || password.length < 8) {
       return res.status(400).json({ error: 'Saisissez une adresse e-mail valide et un mot de passe de huit caractères minimum.' });
     }
-    const endpoint = action === 'login' ? '/auth/v1/token?grant_type=password' : '/auth/v1/signup';
-    const result = await supabaseFetch(url, anonKey, endpoint, { method: 'POST', body: { email, password } });
+    const redirectTo = action === 'signup' ? getAuthRedirectTo(req) : '';
+    const endpoint = action === 'login'
+      ? '/auth/v1/token?grant_type=password'
+      : `/auth/v1/signup${redirectTo ? `?redirect_to=${encodeURIComponent(redirectTo)}` : ''}`;
+    const body = { email, password };
+    if (action === 'signup') {
+      const displayName = getField(req.body, 'displayName', 80);
+      if (req.body?.termsAccepted !== true || req.body?.termsVersion !== TERMS_VERSION) {
+        return res.status(400).json({ error: 'Lis et accepte les conditions d’utilisation et la notice de confidentialité pour créer ton compte.' });
+      }
+      body.data = { display_name: displayName, terms_version: TERMS_VERSION };
+    }
+    const result = await supabaseFetch(url, anonKey, endpoint, { method: 'POST', body });
     return res.json({ accessToken: result.access_token || '', refreshToken: result.refresh_token || '', user: result.user || null, confirmationRequired: !result.access_token });
   } catch (error) {
     const status = Number(error?.status) || 502;
@@ -549,14 +591,14 @@ app.get('/api/works', async (req, res) => {
 
 app.post('/api/works', async (req, res) => {
   try {
-    const { url, anonKey, token } = await authenticatedSupabaseUser(req);
+    const { url, anonKey, token, user } = await authenticatedSupabaseUser(req);
     const work = req.body?.work;
     if (!work || typeof work !== 'object' || typeof work.title !== 'string' || !Array.isArray(work.intros) || work.intros.length !== 2 || !Array.isArray(work.intentions) || work.intentions.length < 4 || work.intentions.length > 20) {
       return res.status(400).json({ error: 'Ce travail ne contient pas tous les textes nécessaires.' });
     }
     const id = String(work.id || randomUUID()).slice(0, 100);
     const updatedAt = new Date().toISOString();
-    const row = { id, title: work.title.slice(0, 160), work: Object.assign({}, work, { id, updatedAt }), updated_at: updatedAt };
+    const row = { id, owner_id: user.id, title: work.title.slice(0, 160), work: Object.assign({}, work, { id, updatedAt }), updated_at: updatedAt };
     await supabaseFetch(url, anonKey, '/rest/v1/liturgical_works?on_conflict=id', { method: 'POST', token, body: row });
     return res.json({ id, updatedAt });
   } catch (error) {
@@ -571,6 +613,59 @@ app.delete('/api/works/:id', async (req, res) => {
     return res.json({ ok: true });
   } catch (error) {
     return res.status(Number(error?.status) || 502).json({ error: String(error?.message || 'Impossible de supprimer ce travail en ligne.').slice(0, 300) });
+  }
+});
+
+app.get('/api/profile', async (req, res) => {
+  try {
+    const { url, anonKey, token, user } = await authenticatedSupabaseUser(req);
+    const rows = await supabaseFetch(url, anonKey, `/rest/v1/profiles?select=user_id,display_name,created_at,updated_at&user_id=eq.${encodeURIComponent(user.id)}&limit=1`, { token });
+    const row = Array.isArray(rows) ? rows[0] : null;
+    return res.json({ profile: {
+      displayName: String(row?.display_name || user.user_metadata?.display_name || ''),
+      email: String(user.email || ''),
+      createdAt: row?.created_at || user.created_at || '',
+      updatedAt: row?.updated_at || ''
+    } });
+  } catch (error) {
+    return res.status(Number(error?.status) || 502).json({ error: String(error?.message || 'Impossible de charger le profil.').slice(0, 300) });
+  }
+});
+
+app.patch('/api/profile', async (req, res) => {
+  try {
+    const { url, anonKey, token, user } = await authenticatedSupabaseUser(req);
+    const displayName = getField(req.body, 'displayName', 80);
+    const updatedAt = new Date().toISOString();
+    const rows = await supabaseFetch(url, anonKey, `/rest/v1/profiles?user_id=eq.${encodeURIComponent(user.id)}`, {
+      method: 'PATCH', token,
+      body: { display_name: displayName, updated_at: updatedAt }
+    });
+    return res.json({ ok: true, profile: Array.isArray(rows) ? rows[0] : { display_name: displayName, updated_at: updatedAt } });
+  } catch (error) {
+    return res.status(Number(error?.status) || 502).json({ error: String(error?.message || 'Impossible d’enregistrer le profil.').slice(0, 300) });
+  }
+});
+
+app.delete('/api/account', async (req, res) => {
+  try {
+    const { url, serviceRoleKey } = supabaseConfig();
+    const { user } = await authenticatedSupabaseUser(req);
+    if (!serviceRoleKey) {
+      return res.status(503).json({ error: 'La suppression sécurisée du compte n’est pas encore activée. Contacte le responsable du site pour exercer ton droit à l’effacement.' });
+    }
+    const response = await fetch(`${url}/auth/v1/admin/users/${encodeURIComponent(user.id)}`, {
+      method: 'DELETE',
+      headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}` },
+      signal: AbortSignal.timeout(12000)
+    });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw Object.assign(new Error(data?.msg || data?.message || data?.error_description || 'Supabase n’a pas pu supprimer le compte.'), { status: response.status });
+    }
+    return res.json({ ok: true });
+  } catch (error) {
+    return res.status(Number(error?.status) || 502).json({ error: String(error?.message || 'Impossible de supprimer le compte.').slice(0, 300) });
   }
 });
 
@@ -618,7 +713,8 @@ app.get('/api/health', (_req, res) => {
     geminiConfigured: Boolean(process.env.GEMINI_API_KEY),
     providers,
     localFallback: false,
-    cloudSyncConfigured: Boolean(supabaseConfig().url && supabaseConfig().anonKey)
+    cloudSyncConfigured: Boolean(supabaseConfig().url && supabaseConfig().anonKey),
+    accountDeletionAvailable: Boolean(supabaseConfig().serviceRoleKey)
   });
 });
 
@@ -831,30 +927,6 @@ N'ajoute aucun commentaire avant ou après ce contenu.
     const buffer = await createDocx(title, introductions, intentions);
 
     const filename = `travail_liturgique_${safeFilename(title)}.docx`;
-    try {
-      await fs.mkdir(HISTORY_DIR, { recursive: true });
-
-      const historyEntry = {
-        date: new Date().toISOString(),
-        title,
-        celebration,
-        temps,
-        lecture1,
-        lecture2,
-        evangile,
-        text: generated,
-        source: result.provider,
-        model: result.model
-      };
-
-      await fs.appendFile(
-        path.join(HISTORY_DIR, 'generations.jsonl'),
-        JSON.stringify(historyEntry) + '\n',
-        'utf8'
-      );
-    } catch (error) {
-      console.error('Historique non enregistré :', error.message);
-    }
 
     return res.json({
       introductions,
