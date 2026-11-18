@@ -3,16 +3,17 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Assistant liturgique — Au service de la Parole de Dieu et de la prière universelle</title>
-  <meta name="description" content="Préparez les introductions aux lectures et les intentions de prière universelle d'une célébration, avec téléchargement du document Word.">
+  <title>Saint Jean Chrysostome — Atelier liturgique</title>
+  <meta name="description" content="L’atelier des lecteurs Saint Jean Chrysostome pour préparer les lectures de la messe, les introductions et la prière universelle.">
   <meta name="color-scheme" content="light dark">
   <meta name="referrer" content="no-referrer">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&family=Source+Serif+4:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=EB+Garamond:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600;700&family=Source+Serif+4:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="redesign.css">
+  <link rel="stylesheet" href="reference-layout.css">
 <meta name="google-site-verification" content="O5JJ9i39giddp6C43NsegLWziDj0q_poz_-NaXAgrnE" />
 </head>
 <body>
@@ -41,7 +42,6 @@
   <header class="site-header" id="accueil-top">
     <div class="container site-header__inner">
       <a class="brand" href="#accueil">
-        <!-- Emplacement du logo : emblème générique provisoire, remplacé par PARISH_LOGO_URL dans app.js -->
         <span class="brand__mark" data-logo-slot>
           <svg width="40" height="40" viewBox="0 0 48 48" aria-hidden="true">
             <circle cx="24" cy="24" r="22" fill="none" stroke="var(--gold)" stroke-width="2"/>
@@ -50,19 +50,21 @@
           </svg>
         </span>
         <span class="brand__text">
-          <span class="brand__name">Assistant liturgique</span>
-          <span class="brand__parish">Paroisse Sainte Joséphine Bakhita</span>
+          <span class="brand__name">Saint Jean Chrysostome</span>
+          <span class="brand__parish">Groupe des lecteurs · Atelier liturgique</span>
         </span>
       </a>
 
       <nav class="nav" id="mainNav" aria-label="Navigation principale">
         <a class="nav__link" href="#accueil">Accueil</a>
-        <a class="nav__link" href="#preparer">Préparer une célébration</a>
-        <a class="nav__link" href="#fonctionnalites">Fonctionnalités</a>
-        <a class="nav__link" href="#a-propos">À propos</a>
+        <a class="nav__link" href="#preparer">Atelier</a>
+        <a class="nav__link" href="#fonctionnalites">Comment ça marche</a>
+        <a class="nav__link" href="#a-propos">Le projet</a>
       </nav>
 
       <div class="site-header__actions">
+        <button type="button" class="btn btn--outline header-auth" id="authOpenBtn">Se connecter</button>
+        <button type="button" class="btn btn--ghost header-auth" id="authLogoutBtn" hidden>Se déconnecter</button>
         <button type="button" class="icon-btn" id="themeToggle" aria-label="Passer au thème sombre" aria-pressed="false">
           <svg class="icon icon--moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
           <svg class="icon icon--sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
@@ -75,91 +77,80 @@
     </div>
   </header>
 
-        <nav class="app-dashboard-nav" id="appDashboardNav" aria-label="Navigation de l'application">
-        <a class="dashboard-nav-link is-current" href="#accueil" data-dashboard-link="accueil">
-          <span class="dashboard-nav-icon" aria-hidden="true">⌂</span>
-          <span>Accueil</span>
-        </a>
-        <a class="dashboard-nav-link" href="#preparer" data-dashboard-link="preparer">
-          <span class="dashboard-nav-icon" aria-hidden="true">ï¼‹</span>
-          <span>Nouvelle préparation</span>
-        </a>
-        <a class="dashboard-nav-link" href="#fonctionnalites" data-dashboard-link="fonctionnalites">
-          <span class="dashboard-nav-icon" aria-hidden="true">✧</span>
-          <span>Fonctionnalités</span>
-        </a>
-        <a class="dashboard-nav-link" href="#a-propos" data-dashboard-link="a-propos">
-          <span class="dashboard-nav-icon" aria-hidden="true">â“˜</span>
-          <span>À propos</span>
-        </a>
-      </nav>
+  <dialog class="auth-dialog" id="authDialog" aria-labelledby="authTitle">
+    <form id="authForm" class="auth-dialog__form">
+      <button class="auth-dialog__close" type="button" id="authCloseBtn" aria-label="Fermer">×</button>
+      <p class="eyebrow">Bibliothèque partagée</p>
+      <h2 id="authTitle">Se connecter</h2>
+      <p class="field__help" id="authDescription">Connectez-vous pour retrouver et partager les travaux du groupe sur plusieurs appareils.</p>
+      <div class="field"><label for="authEmail">Adresse e-mail</label><input id="authEmail" type="email" autocomplete="email" required maxlength="254"></div>
+      <div class="field"><label for="authPassword">Mot de passe</label><input id="authPassword" type="password" autocomplete="current-password" required minlength="8" maxlength="200"></div>
+      <p class="auth-dialog__status" id="authStatus" role="status" aria-live="polite"></p>
+      <button class="btn btn--primary" id="authSubmitBtn" type="submit">Se connecter</button>
+      <button class="btn btn--ghost" id="authModeToggle" type="button">Créer un compte</button>
+    </form>
+  </dialog>
+
 <main id="contenu">
 
     <!-- Accueil -->
-    <section class="hero container" id="accueil" aria-labelledby="heroTitle">
-      <div class="hero__text reveal">
-        <p class="pill">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg>
-          Introductions aux lectures · Prière universelle
-        </p>
-        <h1 class="hero__title" id="heroTitle">Assistant <span>liturgique</span></h1>
-        <p class="hero__subtitle">Au service de la Parole de Dieu et de la prière universelle</p>
-        <p class="hero__signature">
-          <svg width="18" height="22" viewBox="0 0 18 22" aria-hidden="true"><path d="M9 2v18M3 8h12" stroke="var(--gold)" stroke-width="2.4" stroke-linecap="round"/></svg>
-          <span>Un projet numérique au service de la Parole de Dieu et de la communauté paroissiale.</span>
-        </p>
-        <div class="hero__actions">
-          <a class="btn btn--primary btn--lg" href="#preparer">
-            Préparer une célébration
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-          </a>
-          <a class="btn btn--ghost btn--lg" href="#fonctionnalites">Découvrir les fonctionnalités</a>
-        </div>
+    <section class="hero hero--cathedral" id="accueil" aria-labelledby="heroTitle">
+      <div class="hero__route-actions" aria-label="Navigation de l’atelier">
+        <a class="btn btn--secondary" id="heroFreeLink" href="/redaction">Rédaction libre</a>
+        <a class="btn btn--secondary" id="heroAssistedLink" href="/atelier">Atelier assisté</a>
+        <button type="button" class="btn btn--secondary" id="heroMyWorksBtn">Mes travaux (<span id="heroWorkCount">0</span>)</button>
+        <a class="btn btn--secondary" id="heroSignInBtn" href="/auth">Se connecter</a>
+        <button type="button" class="btn btn--secondary" id="heroLogoutBtn">Se déconnecter</button>
       </div>
-
-      <div class="hero__emblem reveal" aria-hidden="true">
-        <div class="emblem">
-          <span class="emblem__glow"></span>
-          <span class="emblem__ring"></span>
-          <div class="emblem__disc">
-            <svg width="176" height="176" viewBox="0 0 120 120">
-              <g stroke="var(--gold)" stroke-width="2.4" stroke-linecap="round"><path d="M60 8v10M60 102v10M8 60h10M102 60h10M23 23l7 7M90 90l7 7M97 23l-7 7M30 90l-7 7"/></g>
-              <circle cx="60" cy="60" r="36" fill="none" stroke="var(--violet)" stroke-width="2"/>
-              <path d="M60 32v56M40 50h40" stroke="var(--wine)" stroke-width="7" stroke-linecap="round"/>
-              <circle cx="60" cy="60" r="7" fill="var(--gold)"/>
-            </svg>
+      <div class="hero__masthead">
+        <img class="hero__seal" src="/assets/sceau-sjc.png" width="128" height="128" alt="">
+        <div class="hero__compact-brand" aria-hidden="true"><img src="/assets/sceau-sjc.png" width="56" height="56" alt=""><span>Saint Jean Chrysostome</span></div>
+        <div class="hero__text reveal">
+          <p class="hero__kicker">Groupe des lecteurs</p>
+          <h1 class="hero__title" id="heroTitle">Saint Jean Chrysostome</h1>
+          <p class="hero__subtitle">Assistant liturgique · introductions aux lectures &amp; prière universelle</p>
+          <p class="hero__lead">Le groupe des lecteurs Saint Jean Chrysostome prépare la proclamation de la Parole et les intentions de prière universelle du dimanche, d’après le calendrier liturgique de l’AELF. Dans l’espace réservé aux membres, rédigez librement ou avec l’assistant. Chaque passage peut être retouché, réécrit, puis exporté en Word, imprimé ou partagé.</p>
+          <div class="hero__actions">
+            <a class="btn btn--primary btn--lg" href="/atelier">Entrer dans l’atelier</a>
+            <a class="btn btn--secondary btn--lg" href="/auth">Se connecter</a>
           </div>
         </div>
       </div>
+      <div class="hero__free-route-title"><span>Saint Jean Chrysostome</span><h1>Rédaction libre</h1></div>
     </section>
 
     <!-- Fonctionnalités -->
     <section class="section container" id="fonctionnalites" aria-labelledby="featTitle">
       <div class="section__head reveal">
-        <p class="eyebrow">Fonctionnalités</p>
-        <h2 class="section__title" id="featTitle">Un travail liturgique prêt en quelques instants</h2>
+        <h2 class="section__title" id="featTitle">Prière universelle et introductions aux lectures de la messe</h2>
+        <p class="section__subtitle">Le groupe des lecteurs Saint Jean Chrysostome prépare la proclamation de la Parole et les intentions de prière universelle du dimanche, d’après le calendrier liturgique de l’AELF. Dans l’espace réservé aux membres, rédigez librement ou avec l’assistant. Chaque passage peut être retouché, réécrit, puis exporté en Word, imprimé ou partagé.</p>
       </div>
       <div class="grid grid--3">
         <article class="card card--feature reveal">
           <div class="feature-icon feature-icon--wine" aria-hidden="true">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h13v17H6a2 2 0 0 0-2 2z"/><path d="M8 7h7M8 11h5"/></svg>
           </div>
-          <h3>Deux introductions aux lectures</h3>
-          <p>Des introductions sobres pour la première et la deuxième lecture, rédigées à partir de vos références bibliques.</p>
+          <h3>Le calendrier AELF</h3>
+          <p>Les lectures du jour — première lecture, psaume, deuxième lecture et Évangile — sont chargées pour la date choisie.</p>
         </article>
         <article class="card card--feature reveal">
           <div class="feature-icon feature-icon--night" aria-hidden="true">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7 11V6a5 5 0 0 1 10 0v5"/><path d="M5 11h14l-1 9H6z"/></svg>
           </div>
-          <h3>Quatre intentions de prière universelle</h3>
-          <p>Toujours quatre intentions, présentées dans des cartes que l'on copie une à une ou toutes ensemble.</p>
+          <h3>La rédaction assistée</h3>
+          <p>Préparez les introductions aux lectures et les intentions, selon le ton de votre assemblée, puis retouchez chaque texte.</p>
         </article>
         <article class="card card--feature reveal">
           <div class="feature-icon feature-icon--gold" aria-hidden="true">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 11v6M9.5 14.5 12 17l2.5-2.5"/></svg>
           </div>
-          <h3>Document Word à télécharger</h3>
-          <p>Le fichier .docx est produit par le serveur, selon les règles de mise en forme de votre application.</p>
+          <h3>Vos travaux enregistrés</h3>
+          <p>Retrouvez vos brouillons dans votre bibliothèque, exportez-les en fichier ou partagez un lien de travail.</p>
+        </article>
+        <article class="card card--feature reveal">
+          <div class="feature-icon feature-icon--violet" aria-hidden="true"><span>✎</span></div>
+          <h3>La rédaction libre et l’export Word</h3>
+          <p>Écrivez le mot d’accueil, les introductions et les intentions avec les lectures à côté, puis téléchargez ou imprimez le document.</p>
         </article>
       </div>
     </section>
@@ -172,43 +163,16 @@
       </div>
 
       <!-- Vue : formulaire -->
-        <!-- Navigation rapide de l'espace de travail -->
-        <nav class="workspace-shortcuts" id="workspaceShortcuts"
-             aria-label="Navigation rapide">
-          <a class="workspace-shortcut workspace-shortcut--active"
-             href="#formView">
-            <span class="workspace-shortcut__number">01</span>
-            <span class="workspace-shortcut__text">
-              <strong>Préparation</strong>
-              <small>Configurer la célébration</small>
-            </span>
-          </a>
-
-          <a class="workspace-shortcut" href="#fonctionnalites">
-            <span class="workspace-shortcut__number">02</span>
-            <span class="workspace-shortcut__text">
-              <strong>Fonctionnalités</strong>
-              <small>Découvrir les possibilités</small>
-            </span>
-          </a>
-
-          <a class="workspace-shortcut" href="#a-propos">
-            <span class="workspace-shortcut__number">03</span>
-            <span class="workspace-shortcut__text">
-              <strong>Le projet</strong>
-              <small>Comprendre la démarche</small>
-            </span>
-          </a>
-        </nav>
-            <div class="dashboard-welcome" id="dashboardWelcome">
+        <div class="dashboard-welcome" id="dashboardWelcome">
         <div class="dashboard-welcome__main">
           <span class="dashboard-kicker">ESPACE DE TRAVAIL</span>
           <h2>Préparons la liturgie ensemble.</h2>
-          <p>Configurez la célébration, renseignez les lectures et préparez des introductions et intentions de prière à relire avant la célébration.</p>
-          <a class="btn btn--primary dashboard-start" href="#formView">
-            Commencer une préparation
-            <span aria-hidden="true">→</span>
-          </a>
+          <p>Choisissez la date, vérifiez les lectures chargées par l’AELF, puis rédigez ou générez votre travail liturgique.</p>
+            <div class="dashboard-actions">
+              <a class="btn btn--primary dashboard-start" href="#formView">Préparation assistée <span aria-hidden="true">→</span></a>
+              <button type="button" class="btn btn--outline" id="openFreeWriting">Rédiger librement</button>
+              <button type="button" class="btn btn--ghost" id="newWorkBtn">Nouveau travail</button>
+            </div>
         </div>
         <div class="dashboard-welcome__aside" aria-label="Contenu généré">
           <div class="dashboard-stat">
@@ -222,6 +186,19 @@
           <p class="dashboard-welcome__note">Un document Word prêt à être relu et adapté.</p>
         </div>
       </div>
+      <details class="saved-works card" id="savedWorks">
+        <summary>Mes travaux enregistrés <span id="savedWorkCount">0</span></summary>
+        <div class="saved-works__body">
+          <button type="button" class="btn btn--ghost saved-works__close" id="closeSavedWorks">Fermer</button>
+          <div id="savedWorkList" class="saved-work-list"><p class="text-muted">Aucun travail enregistré sur cet appareil.</p></div>
+          <div class="saved-works__actions">
+            <label class="btn btn--outline" for="importWorkFile">Importer un travail</label>
+            <input type="file" id="importWorkFile" accept="application/json,.json" hidden>
+            <button type="button" class="btn btn--ghost" id="exportLibraryBtn">Exporter mes travaux</button>
+          </div>
+          <p class="field__help">Les travaux restent dans ce navigateur. Pour les retrouver sur un autre appareil, exportez ou partagez le fichier.</p>
+        </div>
+      </details>
 <div id="formView" class="card card--form reveal">
         <form id="liturgyForm" novalidate autocomplete="off">
 
@@ -237,7 +214,7 @@
               <li data-dot="1" class="is-current"><span>1</span> Célébration</li>
               <li data-dot="2"><span>2</span> Lectures</li>
               <li data-dot="3"><span>3</span> Consignes</li>
-              <li data-dot="4"><span>4</span> Gemini</li>
+              <li data-dot="4"><span>4</span> Génération</li>
             </ol>
           </div>
 
@@ -248,14 +225,16 @@
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>
               </span>
               <div>
-                <h3 id="step1Title">La célébration</h3>
+                <h3 id="step1Title">1. Le jour</h3>
                 <p>Quel jour de la liturgie préparez-vous ?</p>
               </div>
+              <button type="button" class="btn btn--outline atelier-new-work" id="atelierNewWorkBtn">Nouveau travail</button>
             </header>
             <div class="fields fields--2">
               <div class="field">
                 <label for="date">Date de la célébration</label>
                 <input id="date" name="date" type="date" required aria-describedby="err-date">
+                <div class="date-navigation"><button type="button" class="btn btn--ghost" id="prevSunday">Dimanche précédent</button><button type="button" class="btn btn--ghost" id="nextSunday">Dimanche suivant</button></div>
                 <p class="field__error" id="err-date" hidden></p>
               </div>
               <div class="field">
@@ -295,7 +274,7 @@
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h13v17H6a2 2 0 0 0-2 2z"/><path d="M8 7h7M8 11h5"/></svg>
               </span>
               <div>
-                <h3 id="step2Title">Les références bibliques</h3>
+                <h3 id="step2Title">2. Les données</h3>
                 <p>Indiquez les lectures de la célébration.</p>
               </div>
             </header>
@@ -320,6 +299,10 @@
               <label for="textesBibliques">Textes bibliques ou extraits <span class="optional">facultatif</span></label>
               <textarea id="textesBibliques" name="textesBibliques" rows="6" maxlength="20000" placeholder="Collez ici les textes complets ou des extraits, si vous le souhaitez."></textarea>
             </div>
+            <div class="aelf-readings-panel">
+              <div class="aelf-readings-panel__head"><div><h4>Lectures du jour · AELF</h4><p id="aelfCelebrationMeta">Chargez le calendrier pour consulter les lectures.</p></div><button type="button" class="btn btn--outline" id="loadAelfBtn">Charger depuis l’AELF</button></div>
+              <div class="aelf-reading-list" aria-live="polite"><p>Choisissez une date pour afficher les lectures ici.</p></div>
+            </div>
           </section>
 
           <!-- Étape 3 -->
@@ -329,7 +312,7 @@
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
               </span>
               <div>
-                <h3 id="step3Title">Personnalisation</h3>
+                <h3 id="step3Title">3. Le style</h3>
                 <p>Des consignes locales peuvent aider à adapter les formulations.</p>
               </div>
             </header>
@@ -341,6 +324,16 @@
               <label for="consignes">Consignes locales ou particularités <span class="optional">facultatif</span></label>
               <textarea id="consignes" name="consignes" rows="6" maxlength="4000" placeholder="Ex. Prévoir une intention pour les jeunes de la paroisse."></textarea>
             </div>
+            <div class="field field--wide">
+              <label for="ton">Ton de l’assemblée</label>
+              <select id="ton" name="ton">
+                <option>Paroissial, sobre</option>
+                <option>Fraternel et chaleureux</option>
+                <option>Solennel et méditatif</option>
+                <option>Simple et accessible</option>
+                <option>Festif et joyeux</option>
+              </select>
+            </div>
           </section>
 
           <!-- Étape 4 -->
@@ -350,15 +343,21 @@
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="m10.8 12.2 9-9M16 7l3 3M14 9l2 2"/></svg>
               </span>
               <div>
-                <h3 id="step4Title">Configuration de Gemini</h3>
-                <p>Utilisez votre propre clé API pour lancer la génération.</p>
+              <h3 id="step4Title">Finaliser la préparation</h3>
+                <p>Le service du site s’occupe de la génération.</p>
               </div>
             </header>
 
+            <div class="service-ready" role="status">
+              <span aria-hidden="true">✦</span>
+              <div><strong>Prêt à générer</strong><p id="serviceStatusText">Vérification de la disponibilité du service…</p></div>
+            </div>
+            <details id="personalKeyFallback" class="personal-key-fallback" hidden>
+              <summary>Problème de service ? Utiliser une clé personnelle</summary>
             <div class="field field--wide">
-              <label for="geminiKey">Clé API Gemini</label>
+              <label for="geminiKey">Clé Gemini personnelle</label>
               <div class="key-row">
-                <input id="geminiKey" type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore placeholder="Collez votre clé ici" aria-describedby="keyStatus err-geminiKey">
+                <input id="geminiKey" type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore placeholder="Clé personnelle (facultatif)" aria-describedby="keyStatus err-geminiKey">
                 <button type="button" class="btn btn--outline" id="keyToggle" aria-pressed="false">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
                   <span id="keyToggleLabel">Afficher</span>
@@ -370,7 +369,7 @@
               </div>
               <p class="field__help" id="keyStatus">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
-                <span>Clé non vérifiée : sa validité n'est confirmée que par Google lors de la génération.</span>
+                <span>La clé sert uniquement à cette génération et n’est pas enregistrée.</span>
               </p>
               <p class="field__error" id="err-geminiKey" hidden></p>
             </div>
@@ -383,25 +382,14 @@
               </a>
             </p>
 
-            <div class="notes">
-              <div class="note note--violet">
-                <h4>Votre responsabilité</h4>
-                <p>Chaque utilisateur est responsable de sa clé, de ses quotas et des éventuels frais liés à son usage de Gemini.</p>
-              </div>
-              <div class="note note--gold">
-                <h4>Ce que devient la clé</h4>
-                <p>Elle est transmise en HTTPS à votre serveur, uniquement pour cette génération. Elle n'est enregistrée ni dans ce navigateur ni par l'application.</p>
-              </div>
-            </div>
+            </details>
 
-            <div class="alert alert--error" id="formError" role="alert" hidden>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5v.01"/></svg>
-              <div>
-                <strong id="formErrorTitle">La génération a échoué</strong>
-                <p id="formErrorText"></p>
-              </div>
-            </div>
           </section>
+
+          <div class="alert alert--error" id="formError" role="alert" hidden>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5v.01"/></svg>
+            <div><strong id="formErrorTitle">La génération a échoué</strong><p id="formErrorText"></p></div>
+          </div>
 
           <div class="form-nav">
             <button type="button" class="btn btn--outline" id="prevBtn" disabled>Précédent</button>
@@ -415,13 +403,54 @@
             </button>
           </div>
         </form>
+        <button type="button" class="btn btn--primary atelier-generate" id="atelierGenerateBtn">✠ Rédiger le travail liturgique</button>
       </div>
+
+      <!-- Rédaction libre, avec les lectures à consulter à côté -->
+      <section id="freeWritingView" class="free-writing card" hidden aria-labelledby="freeWritingTitle">
+        <div class="free-writing__header"><div><p class="eyebrow">Rédaction libre</p><h3 id="freeWritingTitle">Composez votre travail liturgique</h3></div></div>
+        <div class="free-writing__layout">
+          <aside class="free-writing__library" aria-label="Travaux libres">
+            <button type="button" class="btn btn--outline free-writing__new" id="freeNewWorkBtn">＋ Nouveau travail</button>
+            <h4>Travaux libres</h4>
+            <div id="freeLibraryList" class="free-library-list"><p class="field__help">Aucun travail libre enregistré.</p></div>
+          </aside>
+          <div class="free-writing__editor">
+            <div class="free-writing__meta fields fields--2">
+              <div class="field"><label for="freeTitle">Titre du travail</label><input id="freeTitle" maxlength="120"></div>
+              <div class="field"><label for="freeDate">Date de célébration</label><input id="freeDate" type="date"><div class="date-navigation"><button type="button" class="btn btn--ghost" id="freePrevSunday">Dimanche précédent</button><button type="button" class="btn btn--ghost" id="freeNextSunday">Dimanche suivant</button></div></div>
+            </div>
+            <div class="free-writing__toolbox" aria-label="Aides à la rédaction">
+              <div class="free-writing__toolbox-head"><p class="field__help">Aides à la rédaction</p><button type="button" class="btn btn--outline" id="freePlanBtn">Plan complet de départ</button></div>
+              <div class="free-writing__tools">
+                <button type="button" class="btn btn--ghost" data-free-tool="welcome">Mot d’accueil</button>
+                <button type="button" class="btn btn--ghost" data-free-tool="intro1">Intro 1re lecture</button>
+                <button type="button" class="btn btn--ghost" data-free-tool="psalm">Intro psaume</button>
+                <button type="button" class="btn btn--ghost" data-free-tool="intro2">Intro 2e lecture</button>
+                <button type="button" class="btn btn--ghost" data-free-tool="prayer">Prière universelle</button>
+                <button type="button" class="btn btn--ghost" id="addFreeIntention">+ Intention</button>
+                <button type="button" class="btn btn--ghost" data-free-tool="response">« Seigneur, nous te prions. »</button>
+                <button type="button" class="btn btn--ghost" data-free-tool="conclusion">Mot de conclusion</button>
+              </div>
+              <p class="field__help">Cliquez dans le texte puis sur un bouton : le bloc s’insère à l’endroit du curseur.</p>
+            </div>
+            <div class="field"><label for="freeFullText">Texte intégral</label><textarea id="freeFullText" rows="18" placeholder="Commencez à écrire, ou utilisez « Plan complet de départ »…"></textarea></div>
+            <p class="free-writing__wordcount" id="freeWordCount">0 mot · environ 1 min de lecture à voix haute</p>
+            <div class="free-writing__actions"><button type="button" class="btn btn--primary" id="showFreeWork">Enregistrer et consulter</button><button type="button" class="btn btn--outline" id="saveFreeDraft">Enregistrer en ligne</button><button type="button" class="btn btn--outline" id="freeExportBtn">Télécharger en Word</button><span id="freeSaveStatus" class="field__help">Non enregistré</span></div>
+          </div>
+          <aside class="free-writing__readings" aria-label="Lectures du calendrier AELF">
+            <h4>Lectures du jour</h4>
+            <p id="freeReadingsMeta">Choisissez la date pour consulter les textes AELF.</p>
+            <div class="aelf-reading-list" aria-live="polite"><p>Aucune lecture chargée.</p></div>
+          </aside>
+        </div>
+      </section>
 
       <!-- Vue : chargement -->
       <div id="loadingView" class="card card--loading" hidden>
         <p class="parish-tag">
           <svg width="14" height="18" viewBox="0 0 18 22" aria-hidden="true"><path d="M9 2v18M3 8h12" stroke="var(--gold)" stroke-width="2.6" stroke-linecap="round"/></svg>
-          Paroisse Sainte Joséphine Bakhita · Abomey-Calavi
+          Groupe des lecteurs Saint Jean Chrysostome
         </p>
         <div class="loader" aria-hidden="true">
           <span class="loader__ring"></span>
@@ -459,12 +488,21 @@
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg>
               <span>Tout copier</span>
             </button>
+            <button type="button" class="btn btn--outline" id="saveWorkBtn">Enregistrer</button>
+            <button type="button" class="btn btn--outline" id="shareWorkBtn">Partager</button>
+            <button type="button" class="btn btn--outline" id="shareWhatsAppBtn">Partager sur WhatsApp</button>
+            <button type="button" class="btn btn--outline" id="printWorkBtn">Imprimer</button>
             <button type="button" class="btn btn--ghost" id="restartBtn">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5"/></svg>
               Nouvelle génération
             </button>
           </div>
         </div>
+
+        <details class="aelf-results">
+          <summary>Consulter les lectures AELF de cette célébration</summary>
+          <div id="resultsReadingsList" class="aelf-reading-list"><p>Aucune lecture enregistrée pour ce travail.</p></div>
+        </details>
 
         <h3 class="group-title">Introductions aux lectures</h3>
         <div class="grid grid--2" id="introGrid"></div>
@@ -483,21 +521,33 @@
         <p class="disclaimer">Les textes générés doivent être relus avant usage liturgique.</p>
         <p class="parish-tag parish-tag--end">
           <svg width="14" height="18" viewBox="0 0 18 22" aria-hidden="true"><path d="M9 2v18M3 8h12" stroke="var(--gold)" stroke-width="2.6" stroke-linecap="round"/></svg>
-          Paroisse Sainte Joséphine Bakhita · Abomey-Calavi
+          Groupe des lecteurs Saint Jean Chrysostome
         </p>
       </div>
     </section>
 
-    <!-- Pour notre communauté paroissiale -->
+    <section class="section container privacy-section" id="confidentialite" aria-labelledby="privacyTitle">
+      <div class="section__head">
+        <p class="eyebrow">Données et confidentialité</p>
+        <h2 class="section__title" id="privacyTitle">Vos textes restent sous votre contrôle</h2>
+      </div>
+      <div class="privacy-card card">
+        <p>Sans connexion, les brouillons sont conservés dans le navigateur ; exportez-les ou partagez un lien pour les transférer. Si la bibliothèque Supabase est activée et que vous êtes connecté, les travaux sont synchronisés en ligne et visibles par tous les comptes authentifiés du même projet.</p>
+        <p>Toute personne possédant un lien de partage peut consulter son contenu. La date choisie est envoyée à l’AELF pour récupérer les lectures. Pour la rédaction assistée, les textes et consignes nécessaires sont transmis au fournisseur d’IA configuré par le serveur ; les clés restent côté serveur.</p>
+        <p>Évitez d’inclure des renseignements personnels ou confidentiels dans les intentions. Relisez les textes générés avant leur utilisation pendant une célébration.</p>
+      </div>
+    </section>
+
+    <!-- Le groupe -->
     <section class="section container" id="communaute" aria-labelledby="communityTitle">
       <div class="community reveal">
         <div class="community__text">
-          <p class="eyebrow">Pour notre communauté paroissiale</p>
+          <p class="eyebrow">Groupe des lecteurs</p>
           <h2 id="communityTitle">Une aide à la préparation de la liturgie</h2>
           <p>L'Assistant liturgique a une vocation simple : faciliter la préparation des introductions aux lectures bibliques et des intentions de prière universelle, afin de laisser plus de temps à la prière et à la méditation de la Parole.</p>
-          <p class="community__note">Cette application est le projet de son créateur. Elle n'est pas présentée comme une application officielle de la paroisse ou de l'archidiocèse.</p>
+          <p class="community__note">Un espace de travail conçu pour accompagner la préparation et la relecture en équipe.</p>
         </div>
-        <aside class="community__card" aria-label="La paroisse">
+        <aside class="community__card" aria-label="Le groupe des lecteurs">
           <span class="community__logo" data-logo-slot>
             <svg width="72" height="72" viewBox="0 0 48 48" aria-hidden="true">
               <circle cx="24" cy="24" r="22" fill="none" stroke="var(--gold)" stroke-width="2"/>
@@ -505,13 +555,8 @@
               <circle cx="24" cy="24" r="4" fill="var(--gold)"/>
             </svg>
           </span>
-          <h3>Paroisse Sainte Joséphine Bakhita</h3>
-          <p>Abomey-Calavi, Bénin<br>Archidiocèse de Cotonou</p>
-          <a class="community__link" href="https://paroissebakhita-bj.org/" target="_blank" rel="noopener noreferrer">
-            Site de la paroisse
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>
-            <span class="sr-only">(s'ouvre dans un nouvel onglet)</span>
-          </a>
+          <h3>Saint Jean Chrysostome</h3>
+          <p>Un atelier pour préparer ensemble<br>la liturgie de la Parole</p>
         </aside>
       </div>
     </section>
@@ -537,8 +582,8 @@
 
       <div class="about reveal">
         <div>
-          <h2 id="aboutTitle">Votre clé, votre responsabilité</h2>
-          <p>Chaque utilisateur renseigne sa propre clé Gemini. L'application ne la conserve pas : elle sert uniquement à la génération en cours, et le serveur applique toujours les mêmes règles liturgiques, avec deux introductions et quatre intentions.</p>
+          <h2 id="aboutTitle">Un service simple et sécurisé</h2>
+          <p>La clé Gemini est configurée côté serveur pour que chacun puisse utiliser l'assistant sans compte technique. Le site applique les mêmes règles liturgiques : deux introductions et quatre intentions, avec un document Word à télécharger.</p>
         </div>
         <a class="btn btn--gold" href="#preparer">Préparer une célébration</a>
       </div>
@@ -549,9 +594,9 @@
     <div class="container">
       <div class="site-footer__top">
         <div class="site-footer__parish">
-          <strong>Paroisse Sainte Joséphine Bakhita</strong>
-          <span>Abomey-Calavi, Bénin · Archidiocèse de Cotonou</span>
-          <a href="https://paroissebakhita-bj.org/" target="_blank" rel="noopener noreferrer">paroissebakhita-bj.org<span class="sr-only"> (s'ouvre dans un nouvel onglet)</span></a>
+          <img class="footer-seal" src="/assets/sceau-sjc.png" width="56" height="56" alt="">
+          <strong>Groupe des lecteurs Saint Jean Chrysostome</strong>
+          <span>Assistant liturgique · Préparation et relecture en équipe</span>
         </div>
         <div class="footer-social" aria-label="Contacter le créateur">
           <a class="footer-social__link" data-contact="whatsapp" aria-label="Me contacter sur WhatsApp">
@@ -565,6 +610,7 @@
       <div class="site-footer__inner">
         <span>© <span id="year"></span> Assistant liturgique</span>
         <span>Relisez toujours les textes avant usage liturgique.</span>
+        <a href="#confidentialite">Confidentialité et utilisation</a>
       </div>
     </div>
   </footer>
@@ -584,7 +630,7 @@
           <span class="copy-btn__label">Copier</span>
         </button>
       </header>
-      <p class="result-card__text"></p>
+      <textarea class="result-card__text result-card__editor" data-edit aria-label="Texte éditable" rows="4"></textarea>
     </article>
   </template>
   <template id="iconBook"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h13v17H6a2 2 0 0 0-2 2z"/><path d="M8 7h7M8 11h5"/></svg></template>

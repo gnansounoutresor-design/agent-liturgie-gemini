@@ -67,16 +67,16 @@ function getReference(html, labelPattern) {
 }
 
 function getReadingText(html, number) {
-  const marker = `id="messe1_lecture${number}"`;
-  const start = html.indexOf(marker);
+  const marker = new RegExp(`<[^>]*\\bid="messe1_lecture${number}"[^>]*>`, 'i');
+  const match = marker.exec(html);
+  if (!match) return '';
 
-  if (start < 0) return '';
-
-  const nextMarker = /id="messe1_lecture\d+"/g;
-  nextMarker.lastIndex = start + marker.length;
+  const start = match.index + match[0].length;
+  const nextMarker = /<[^>]*\bid="messe1_lecture\d+"[^>]*>/gi;
+  nextMarker.lastIndex = start;
   const next = nextMarker.exec(html);
-
-  const section = html.slice(start, next ? next.index : Math.min(html.length, start + 20000));
+  const end = next ? next.index : Math.min(html.length, start + 20000);
+  const section = html.slice(start, end).split('<!--')[0];
   return htmlToText(section);
 }
 
@@ -100,17 +100,26 @@ export async function getAelfLiturgy(date) {
   const url = `${AELF_BASE}/${date}/romain/messe`;
 
   let response;
-  try {
-    response = await fetch(url, {
-      headers: { 'User-Agent': 'AssistantLiturgique/1.0' },
-      signal: AbortSignal.timeout(15000)
-    });
-  } catch {
-    throw new Error('Impossible de joindre le calendrier AELF. Réessaie plus tard.');
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      response = await fetch(url, {
+        headers: { 'User-Agent': 'AssistantLiturgique/1.0' },
+        signal: AbortSignal.timeout(15000)
+      });
+    } catch {
+      if (attempt === 2) {
+        throw new Error('Impossible de joindre le calendrier AELF après une nouvelle tentative. Réessaie plus tard.');
+      }
+      await new Promise(resolve => setTimeout(resolve, 900));
+      continue;
+    }
+
+    if (response.ok || response.status < 500 || attempt === 2) break;
+    await new Promise(resolve => setTimeout(resolve, 900));
   }
 
-  if (!response.ok) {
-    throw new Error(`Le calendrier AELF a répondu avec le statut ${response.status}.`);
+  if (!response?.ok) {
+    throw new Error(`Le calendrier AELF a répondu avec le statut ${response?.status || 'inconnu'}.`);
   }
 
   const html = await response.text();
